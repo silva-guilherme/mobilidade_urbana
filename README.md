@@ -39,8 +39,9 @@ Tecnologias utilizadas:
 
 ---
 
+# Como rodar o projeto
 
-# Pré-requisitos
+# 1. Pré-requisitos
 
 Para executar o projeto é necessário ter instalado:
 
@@ -58,29 +59,6 @@ git --version
 
 ---
 
-# Como rodar o projeto
-
-Siga os passos abaixo para executar o sistema em sua máquina.
-
-## 1. Pré-requisitos
-
-Certifique-se de ter instalado:
-
-* **Git**
-* **Docker**
-* **Docker Compose**
-* **Python 3.10+** (necessário apenas se quiser rodar localmente sem Docker)
-
-Verificar instalação:
-
-```bash
-git --version
-docker --version
-docker compose version
-python --version
-```
-
----
 
 # 2. Clonar o repositório
 
