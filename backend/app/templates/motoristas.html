@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Motoristas{% endblock %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">Motoristas</h2>
+
+<!-- Formulário de Inserção -->
+<form action="/motoristas" method="post" class="mb-6 bg-white p-4 rounded shadow">
+    <div class="mb-2">
+        <label class="block font-semibold">Nome Completo</label>
+        <input type="text" name="nome_completo" class="border rounded w-full p-2">
+    </div>
+    <div class="mb-2">
+        <label class="block font-semibold">CNH</label>
+        <input type="text" name="cnh" class="border rounded w-full p-2">
+    </div>
+    <div class="mb-2">
+        <label class="block font-semibold">Status</label>
+        <select name="status" class="border rounded w-full p-2">
+            <option value="Ativo">Ativo</option>
+            <option value="Suspenso">Suspenso</option>
+            <option value="Férias">Férias</option>
+        </select>
+    </div>
+    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Adicionar Motorista</button>
+</form>
+
+<!-- Tabela -->
+<table class="min-w-full bg-white rounded shadow">
+    <thead>
+        <tr class="bg-gray-200">
+            <th class="py-2 px-4">ID</th>
+            <th class="py-2 px-4">Nome Completo</th>
+            <th class="py-2 px-4">CNH</th>
+            <th class="py-2 px-4">Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for motorista in motoristas %}
+        <tr class="border-t">
+            <td class="py-2 px-4">{{ motorista.id }}</td>
+            <td class="py-2 px-4">{{ motorista.nome_completo }}</td>
+            <td class="py-2 px-4">{{ motorista.cnh }}</td>
+            <td class="py-2 px-4">{{ motorista.status }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
