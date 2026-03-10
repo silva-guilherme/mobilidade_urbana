@@ -1,0 +1,15 @@
+# arquivos de ambiente
+.env
+.env.*
+!.env.example
+
+# ambiente virtual
+venv/
+__pycache__/
+
+# arquivos python compilados
+*.pyc
+*.pyo
+
+# docker
+*.log
