@@ -113,7 +113,7 @@ CREATE TABLE itinerarios (
     id_rota INTEGER NOT NULL,
     id_parada INTEGER NOT NULL,
     ordem_parada INTEGER NOT NULL,
-    tempo_estimado_chegada TIMESTAMP,
+    tempo_estimado_minutos INTEGER,
 
     PRIMARY KEY (id_rota, id_parada),
 
