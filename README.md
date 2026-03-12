@@ -1,10 +1,12 @@
 # Sistema de Mobilidade Urbana
 
 Projeto desenvolvido para a disciplina de **Banco de Dados**.
+
 O objetivo do sistema é implementar um banco de dados e uma aplicação para gerenciamento de informações relacionadas à mobilidade urbana, incluindo passageiros, motoristas, ônibus, rotas, paradas e viagens.
 
-O sistema foi desenvolvido com **backend em Python utilizando FastAPI** e **banco de dados PostgreSQL**, com o ambiente configurado através de **Docker** para facilitar a execução em qualquer máquina.
+O sistema utiliza **Python (FastAPI)** no backend e **PostgreSQL** como banco de dados, com ambiente configurado através de **Docker** para facilitar a execução em qualquer máquina.
 
+---
 
 ## 👨‍🎓 Autores
 
@@ -13,14 +15,14 @@ O sistema foi desenvolvido com **backend em Python utilizando FastAPI** e **banc
 - Guilherme Vasconcelos Salviano  
 - Ruan Pablo Furtado Oliveira  
 
+---
 
+# Arquitetura do sistema
 
-# Arquitetura do projeto
-
-O projeto segue a seguinte arquitetura:
+O sistema segue uma arquitetura simples de três camadas:
 
 ```
-Frontend (interface futura)
+Frontend (interface web futura)
         │
         ▼
 Backend API (Python + FastAPI)
@@ -31,91 +33,68 @@ Banco de Dados (PostgreSQL)
 
 Tecnologias utilizadas:
 
-* Python
-* FastAPI
-* PostgreSQL
-* Docker
-* Swagger/OpenAPI (documentação automática da API)
+- Python
+- FastAPI
+- PostgreSQL
+- Docker
+- Swagger / OpenAPI (documentação automática da API)
 
 ---
 
+# Documentação
 
-# Pré-requisitos
+Documentação detalhada do projeto:
 
-Para executar o projeto é necessário ter instalado:
-
-* **Git**
-* **Python 3.10+**
-* **Docker**
-
-Verificar instalação:
-
-```
-python --version
-docker --version
-git --version
-```
+- 📄 Evolução do modelo → `Docs/Evolução_do_modelo.md`
+- 📄 Arquitetura do sistema → `Docs/Arquitetura.md`
+- 📄 Funcionamento do sistema → `Docs/funcionamento_sistema.md`
 
 ---
 
 # Como rodar o projeto
 
-Siga os passos abaixo para executar o sistema em sua máquina.
-
 ## 1. Pré-requisitos
 
-Certifique-se de ter instalado:
+Instalar:
 
-* **Git**
-* **Docker**
-* **Docker Compose**
-* **Python 3.10+** (necessário apenas se quiser rodar localmente sem Docker)
+- Git
+- Python 3.10+
+- Docker
 
 Verificar instalação:
 
 ```bash
-git --version
-docker --version
-docker compose version
 python --version
+docker --version
+git --version
 ```
 
 ---
 
-# 2. Clonar o repositório
-
-
-Repositório:
+## 2. Clonar o repositório
 
 ```bash
 git clone https://github.com/silva-guilherme/mobilidade_urbana.git
-```
-
-Entrar na pasta do projeto:
-
-```bash
 cd mobilidade_urbana
 ```
 
 ---
 
-# 3. Criar o arquivo `.env`
+## 3. Criar o arquivo `.env`
 
-O projeto utiliza variáveis de ambiente para configurar o banco de dados.
-
-Primeiro copie o arquivo de exemplo:
+Copiar o arquivo de exemplo:
 
 ```bash
 cp .env.example .env
 ```
 
-* **Não alterar as credenciais** a menos que seja necessário
+Não é necessário alterar as credenciais para execução padrão.
 
 ---
 
-# 4. Subir os containers
+## 4. Subir os containers
 
-Execute o comando abaixo para construir e iniciar os containers:
+Execute:
 
 ```bash
 docker compose up --build
@@ -123,69 +102,46 @@ docker compose up --build
 
 Esse comando irá:
 
-* construir a imagem do backend
-* iniciar o container da API
-* iniciar o container do PostgreSQL
-* criar o banco automaticamente
+- iniciar o container do PostgreSQL
+- iniciar o backend FastAPI
+- criar o banco de dados
 
 ---
 
-# 5. Verificar se os containers estão rodando
-
-Abra outro terminal e execute:
+## 5. Verificar containers
 
 ```bash
 docker ps
 ```
 
-Você deverá ver algo parecido com:
+Containers esperados:
 
 ```
 mobilidade_urbana-backend
 mobilidade_urbana-db
 ```
 
-Isso indica que a aplicação e o banco estão rodando corretamente.
-
 ---
 
-# 6. Acessar a API
+## 6. Acessar a API
 
-Após iniciar os containers, a aplicação ficará disponível em:
+Aplicação:
 
 ```
 http://localhost:8000
 ```
 
-A documentação automática da API pode ser acessada em:
+Documentação interativa da API:
 
 ```
 http://localhost:8000/docs
 ```
 
-Essa interface permite testar as rotas da API diretamente pelo navegador.
+A interface `/docs` permite testar as rotas da API diretamente pelo navegador.
 
 ---
 
-# 7. Verificar se a API está funcionando
-
-Abra no navegador:
-
-```
-http://localhost:8000/docs
-```
-
-Se a página abrir com as rotas da API, significa que o backend está funcionando.
-
----
 # Testando a API
-
-Na página `/docs` é possível executar operações como:
-
-* criar passageiros
-* listar rotas
-* consultar viagens
-* inserir registros no banco
 
 Exemplo de criação de passageiro:
 
@@ -198,23 +154,23 @@ Body:
 ```
 {
   "nome_completo": "João da Silva",
-  "perfil_acessibilidade": "Nenhum"
+  "perfil_acessibilidade": "nenhum"
 }
 ```
 
 ---
 
-# Acessando o banco de dados pelo terminal
+# Acessando o banco pelo terminal
 
-Caso seja necessário acessar o banco dentro do container:
+Entrar no PostgreSQL dentro do container:
 
-```
+```bash
 docker exec -it mobilidade_urbana-db-1 psql -U admin -d mobilidade
 ```
 
 Exemplo de consulta:
 
-```
+```sql
 SELECT * FROM passageiros;
 ```
 
@@ -226,89 +182,31 @@ Listar tabelas:
 
 ---
 
-# Executando o projeto localmente (sem Docker)
-
-Também é possível rodar o projeto localmente.
-
-1. Criar ambiente virtual
+# Estrutura do projeto
 
 ```
-python -m venv venv
-```
+app/
+   backend/
+   frontend/
 
-2. Ativar ambiente
+sql/
+   schema.sql
+   seed.sql
+   queries.sql
 
-Linux / WSL:
-
-```
-source venv/bin/activate
-```
-
-Windows:
-
-```
-venv\Scripts\activate
-```
-
-3. Instalar dependências
-
-```
-pip install -r requirements.txt
-```
-
-4. Executar aplicação
-
-```
-uvicorn app.main:app --reload
-```
-
-A aplicação ficará disponível em:
-
-```
-http://localhost:8000
+docker-compose.yml
+README.md
+docs/
 ```
 
 ---
 
-# Banco de dados
-
-O banco utilizado é **PostgreSQL**.
-
-Tabelas principais do sistema:
-
-* passageiros
-* motoristas
-* onibus
-* rotas
-* paradas
-* viagens
-* embarques
-* itinerarios
-* feedbacks
-
-Essas tabelas representam as entidades do sistema e seus relacionamentos.
-
----
-
-# Status atual do projeto
+# Status do projeto
 
 Até o momento foi implementado:
 
-* configuração do ambiente com Docker
-* backend inicial com FastAPI
-* conexão com PostgreSQL
-* criação das tabelas do banco
-* endpoints iniciais para manipulação de dados
-* documentação automática da API
-
----
-
-# Próximos passos
-
-* remover uso de ORM e utilizar apenas SQL puro conforme exigência da disciplina
-* implementar operações completas de CRUD
-* adicionar consultas parametrizadas
-* implementar interface do sistema
-* organizar scripts SQL do banco
-
----
+- modelagem do banco de dados
+- criação das tabelas no PostgreSQL
+- backend inicial com FastAPI
+- execução do banco via Docker
+- documentação automática da API
