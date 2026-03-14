@@ -1,4 +1,4 @@
-version: '3.8'
+
 services:
   db:
     image: postgres:15
@@ -10,6 +10,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backend/sql:/docker-entrypoint-initdb.d
 
   backend:
     build: ./backend
@@ -20,6 +21,18 @@ services:
       - "8000:8000"
     depends_on:
       - db
+    env_file:
+      - .env
+
+  seed:
+    build: ./backend
+    command: sh -c "sleep 5 && python app/seed.py"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+    env_file:
+      - .env
 
 volumes:
   postgres_data:
