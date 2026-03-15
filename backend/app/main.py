@@ -7,8 +7,17 @@ from app.schemas_responses import (
     TelefoneMotoristaResponse, EmailPassageiroResponse
 )
 from typing import List, Optional
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="API Mobilidade Urbana")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ==============================
 # MOTORISTAS

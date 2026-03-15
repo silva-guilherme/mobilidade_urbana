@@ -243,14 +243,7 @@ def relatorio_horarios_pico() -> List[Dict]:
             WHERE v.horario_saida IS NOT NULL
             GROUP BY periodo
             ORDER BY 
-                CASE periodo
-                    WHEN 'Madrugada (5h-8h)' THEN 1
-                    WHEN 'Manhã (9h-11h)' THEN 2
-                    WHEN 'Almoço (12h-14h)' THEN 3
-                    WHEN 'Tarde (15h-18h)' THEN 4
-                    WHEN 'Noite (19h-22h)' THEN 5
-                    ELSE 6
-                END
+                MIN(EXTRACT(HOUR FROM v.horario_saida))  -- Usa o menor horário do período para ordenar
         """
         cursor.execute(query)
         return fetch_all(cursor)
