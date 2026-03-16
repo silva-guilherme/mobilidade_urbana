@@ -22,7 +22,7 @@ O sistema utiliza **Python (FastAPI)** no backend e **PostgreSQL** como banco de
 O sistema segue uma arquitetura simples de três camadas:
 
 ```
-Frontend (interface web futura)
+Frontend (interface web next.js)
         │
         ▼
 Backend API (Python + FastAPI)
@@ -38,8 +38,23 @@ Tecnologias utilizadas:
 - PostgreSQL
 - Docker
 - Swagger / OpenAPI (documentação automática da API)
+- Next.js
 
 ---
+
+# Estrutura do Banco de Dados
+
+O sistema possui as seguintes entidades principais:
+
+- passageiros
+- motoristas
+- onibus
+- rotas
+- paradas
+- viagens
+- embarques
+- itinerarios
+- feedbacks
 
 # Documentação
 
@@ -51,25 +66,14 @@ Documentação detalhada do projeto:
 
 ---
 
-# Como rodar o projeto
+# Como executar o projeto
 
 ## 1. Pré-requisitos
 
-Instalar:
+É necessário ter instalado:
 
 - Git
-- Python 3.10+
 - Docker
-
-Verificar instalação:
-
-```bash
-python --version
-docker --version
-git --version
-```
-
----
 
 ## 2. Clonar o repositório
 
@@ -88,7 +92,6 @@ Copiar o arquivo de exemplo:
 cp .env.example .env
 ```
 
-Não é necessário alterar as credenciais para execução padrão.
 
 ---
 
@@ -102,28 +105,20 @@ docker compose up --build
 
 Esse comando irá:
 
-- iniciar o container do PostgreSQL
+- iniciar o banco de dados PostgreSQL
 - iniciar o backend FastAPI
-- criar o banco de dados
-
----
-
-## 5. Verificar containers
-
-```bash
-docker ps
-```
-
-Containers esperados:
-
-```
-mobilidade_urbana-backend
-mobilidade_urbana-db
-```
+- iniciar o frontend Next.js
 
 ---
 
 ## 6. Acessar a API
+
+
+Frontend
+
+```
+http://localhost:3000
+```
 
 Aplicação:
 
@@ -138,25 +133,6 @@ http://localhost:8000/docs
 ```
 
 A interface `/docs` permite testar as rotas da API diretamente pelo navegador.
-
----
-
-# Testando a API
-
-Exemplo de criação de passageiro:
-
-```
-POST /passageiros
-```
-
-Body:
-
-```
-{
-  "nome_completo": "João da Silva",
-  "perfil_acessibilidade": "nenhum"
-}
-```
 
 ---
 
@@ -181,32 +157,3 @@ Listar tabelas:
 ```
 
 ---
-
-# Estrutura do projeto
-
-```
-app/
-   backend/
-   frontend/
-
-sql/
-   schema.sql
-   seed.sql
-   queries.sql
-
-docker-compose.yml
-README.md
-docs/
-```
-
----
-
-# Status do projeto
-
-Até o momento foi implementado:
-
-- modelagem do banco de dados
-- criação das tabelas no PostgreSQL
-- backend inicial com FastAPI
-- execução do banco via Docker
-- documentação automática da API
