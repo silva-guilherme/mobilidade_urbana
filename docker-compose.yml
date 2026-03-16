@@ -1,7 +1,7 @@
-version: '3.8'
 services:
   db:
     image: postgres:15
+    container_name: mobilidade-db
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin123
@@ -10,16 +10,67 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backend/sql:/docker-entrypoint-initdb.d
+    networks:
+      - mobilidade-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d mobilidade"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: ./backend
+    container_name: mobilidade-backend
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - ./backend:/app
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    networks:
+      - mobilidade-network
+
+  seed:
+    build: ./backend
+    container_name: mobilidade-seed
+    command: sh -c "sleep 5 && python app/seed.py"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    networks:
+      - mobilidade-network
+    profiles:
+      - seed
+
+  frontend:
+    build: ./frontend
+    container_name: mobilidade-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - mobilidade-network
+    command: npm run dev
 
 volumes:
   postgres_data:
+
+networks:
+  mobilidade-network:
+    driver: bridge
