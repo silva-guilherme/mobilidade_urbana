@@ -48,8 +48,8 @@ CREATE TYPE tipo_telefone AS ENUM (
 CREATE TABLE passageiros (
     id SERIAL PRIMARY KEY,
     nome_completo VARCHAR(100) NOT NULL,
-    perfil_acessibilidade perfil_acessibilidade,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- ← ADICIONADO
+    perfil_acessibilidade perfil_acessibilidade NOT NULL DEFAULT 'nenhum',
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
 );
 
 -- =====================================================
@@ -60,8 +60,7 @@ CREATE TABLE emails_passageiro (
     id SERIAL PRIMARY KEY,
     id_passageiro INTEGER NOT NULL,
     email VARCHAR(150) NOT NULL,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- ← ADICIONADO
-
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
     FOREIGN KEY (id_passageiro) REFERENCES passageiros(id) ON DELETE CASCADE
 );
 
@@ -73,9 +72,8 @@ CREATE TABLE motoristas (
     id SERIAL PRIMARY KEY,
     nome_completo VARCHAR(100) NOT NULL,
     cnh VARCHAR(20) UNIQUE NOT NULL,
-    status status_motorista,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- ← ADICIONADO
-);
+    status status_motorista NOT NULL DEFAULT 'ativo',
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP  );
 
 -- =====================================================
 -- TELEFONES MOTORISTA
@@ -86,8 +84,7 @@ CREATE TABLE telefones_motorista (
     id_motorista INTEGER NOT NULL,
     numero VARCHAR(20) NOT NULL,
     tipo tipo_telefone,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- ← ADICIONADO
-
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  
     FOREIGN KEY (id_motorista) REFERENCES motoristas(id) ON DELETE CASCADE
 );
 
@@ -100,8 +97,7 @@ CREATE TABLE onibus (
     placa VARCHAR(10) UNIQUE NOT NULL,
     modelo_acessivel BOOLEAN,
     capacidade_maxima INTEGER NOT NULL CHECK (capacidade_maxima > 0),
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- ← ADICIONADO
-);
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP );
 
 -- =====================================================
 -- PARADAS
@@ -112,8 +108,7 @@ CREATE TABLE paradas (
     latitude DECIMAL(10,7),
     longitude DECIMAL(10,7),
     status_acessibilidade status_parada,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- ← ADICIONADO
-);
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP );
 
 -- =====================================================
 -- ROTAS
@@ -123,8 +118,7 @@ CREATE TABLE rotas (
     id SERIAL PRIMARY KEY,
     codigo_rota VARCHAR(10) UNIQUE NOT NULL,
     nome_rota VARCHAR(100),
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- ← ADICIONADO
-);
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP  );
 
 -- =====================================================
 -- ITINERARIOS
@@ -135,8 +129,7 @@ CREATE TABLE itinerarios (
     id_parada INTEGER NOT NULL,
     ordem_parada INTEGER NOT NULL CHECK (ordem_parada > 0),
     tempo_estimado TIME,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- ← ADICIONADO
-
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
     PRIMARY KEY (id_rota, id_parada),
 
     FOREIGN KEY (id_rota) REFERENCES rotas(id),
@@ -154,8 +147,7 @@ CREATE TABLE viagens (
     id_motorista INTEGER NOT NULL,
     horario_saida TIME,
     lotacao_atual INTEGER CHECK (lotacao_atual >= 0),
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- ← ADICIONADO
-
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
     FOREIGN KEY (id_rota) REFERENCES rotas(id) ON DELETE RESTRICT,
     FOREIGN KEY (id_onibus) REFERENCES onibus(id) ON DELETE RESTRICT,
     FOREIGN KEY (id_motorista) REFERENCES motoristas(id) ON DELETE RESTRICT
@@ -170,14 +162,13 @@ CREATE TABLE embarques (
     id_passageiro INTEGER NOT NULL,
     id_parada_origem INTEGER,
     data_hora TIMESTAMP NOT NULL,
-    tipo_pagamento tipo_pagamento,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- ← ADICIONADO
-
+    tipo_pagamento tipo_pagamento NOT NULL,
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
     PRIMARY KEY (id_viagem, id_passageiro),
 
-    FOREIGN KEY (id_viagem) REFERENCES viagens(id),
-    FOREIGN KEY (id_passageiro) REFERENCES passageiros(id),
-    FOREIGN KEY (id_parada_origem) REFERENCES paradas(id)
+    FOREIGN KEY (id_viagem) REFERENCES viagens(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_passageiro) REFERENCES passageiros(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_parada_origem) REFERENCES paradas(id) ON DELETE RESTRICT
 );
 
 -- =====================================================
@@ -188,11 +179,10 @@ CREATE TABLE feedbacks (
     id SERIAL PRIMARY KEY,
     id_passageiro INTEGER,
     id_viagem INTEGER,
-    tipo_ocorrencia tipo_ocorrencia,
+    tipo_ocorrencia tipo_ocorrencia NOT NULL,
     nivel_lotacao INTEGER CHECK (nivel_lotacao BETWEEN 1 AND 5),
     data_hora TIMESTAMP,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- ← ADICIONADO
-
-    FOREIGN KEY (id_passageiro) REFERENCES passageiros(id),
-    FOREIGN KEY (id_viagem) REFERENCES viagens(id)
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+    FOREIGN KEY (id_passageiro) REFERENCES passageiros(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_viagem) REFERENCES viagens(id) ON DELETE CASCADE
 );

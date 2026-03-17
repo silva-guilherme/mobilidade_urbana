@@ -54,14 +54,21 @@ O projeto foi organizado separando responsabilidades entre aplicação e banco d
 Exemplo de estrutura:
 
 ```
-app/
-    backend/
-    frontend/
+backend/
+    app/
+        main.py          # Rotas da API (FastAPI)
+        crud.py          # Operações CRUD com SQL puro
+        database.py      # Conexão com o banco de dados
+        schemas.py       # Validação de dados (Pydantic)
+        relatorios.py    # Consultas analíticas e relatórios
+        seed.py          # Povoamento do banco com dados de teste
+    sql/
+        schema.sql       # Script de criação do banco (DDL)
 
-sql/
-    schema.sql
-    seed.sql
-    queries.sql
+frontend/
+    app/                 # Páginas da interface web (Next.js)
+    components/          # Componentes reutilizáveis
+    lib/api.ts           # Cliente HTTP para a API
 
 docker-compose.yml
 README.md
@@ -142,24 +149,22 @@ Esse arquivo permite recriar toda a estrutura do banco de dados a partir do zero
 
 ---
 
-## seed.sql
+## seed.py (backend/app/seed.py)
 
-Arquivo responsável por inserir **dados de teste** no banco de dados.
+Script Python responsável por inserir **dados de teste** no banco de dados utilizando a biblioteca Faker.
 
-Esses dados são utilizados para validar o funcionamento do sistema durante o desenvolvimento.
+Esses dados são utilizados para validar o funcionamento do sistema durante o desenvolvimento. O seed pode ser executado via Docker Compose com o profile `seed`.
 
 ---
 
-## queries.sql
+## Consultas SQL (backend/app/crud.py e relatorios.py)
 
-Arquivo destinado às consultas SQL utilizadas pelo sistema.
+As consultas SQL do sistema estão implementadas diretamente nos módulos Python:
 
-Essas consultas representam operações comuns do sistema, como:
+- **crud.py**: operações de inserção, consulta, atualização e deleção para todas as entidades
+- **relatorios.py**: consultas analíticas complexas (acessibilidade, rotas críticas, horários de pico, etc.)
 
-- listar rotas
-- consultar viagens
-- registrar embarques
-- obter estatísticas de utilização
+Todas as consultas utilizam SQL puro via `psycopg2`, sem uso de ORM.
 
 ---
 
