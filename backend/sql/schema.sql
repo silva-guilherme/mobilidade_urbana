@@ -99,7 +99,7 @@ CREATE TABLE onibus (
     id SERIAL PRIMARY KEY,
     placa VARCHAR(10) UNIQUE NOT NULL,
     modelo_acessivel BOOLEAN,
-    capacidade_maxima INTEGER NOT NULL,
+    capacidade_maxima INTEGER NOT NULL CHECK (capacidade_maxima > 0),
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- ← ADICIONADO
 );
 
@@ -133,7 +133,7 @@ CREATE TABLE rotas (
 CREATE TABLE itinerarios (
     id_rota INTEGER NOT NULL,
     id_parada INTEGER NOT NULL,
-    ordem_parada INTEGER NOT NULL,
+    ordem_parada INTEGER NOT NULL CHECK (ordem_parada > 0),
     tempo_estimado TIME,
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- ← ADICIONADO
 
@@ -153,7 +153,7 @@ CREATE TABLE viagens (
     id_onibus INTEGER NOT NULL,
     id_motorista INTEGER NOT NULL,
     horario_saida TIME,
-    lotacao_atual INTEGER,
+    lotacao_atual INTEGER CHECK (lotacao_atual >= 0),
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- ← ADICIONADO
 
     FOREIGN KEY (id_rota) REFERENCES rotas(id),
@@ -189,7 +189,7 @@ CREATE TABLE feedbacks (
     id_passageiro INTEGER,
     id_viagem INTEGER,
     tipo_ocorrencia tipo_ocorrencia,
-    nivel_lotacao INTEGER,
+    nivel_lotacao INTEGER CHECK (nivel_lotacao BETWEEN 1 AND 5),
     data_hora TIMESTAMP,
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- ← ADICIONADO
 
