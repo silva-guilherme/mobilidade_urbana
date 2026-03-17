@@ -62,7 +62,7 @@ CREATE TABLE emails_passageiro (
     email VARCHAR(150) NOT NULL,
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- ← ADICIONADO
 
-    FOREIGN KEY (id_passageiro) REFERENCES passageiros(id)
+    FOREIGN KEY (id_passageiro) REFERENCES passageiros(id) ON DELETE CASCADE
 );
 
 -- =====================================================
@@ -88,7 +88,7 @@ CREATE TABLE telefones_motorista (
     tipo tipo_telefone,
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- ← ADICIONADO
 
-    FOREIGN KEY (id_motorista) REFERENCES motoristas(id)
+    FOREIGN KEY (id_motorista) REFERENCES motoristas(id) ON DELETE CASCADE
 );
 
 -- =====================================================
@@ -121,7 +121,7 @@ CREATE TABLE paradas (
 
 CREATE TABLE rotas (
     id SERIAL PRIMARY KEY,
-    codigo_rota VARCHAR(10) NOT NULL,
+    codigo_rota VARCHAR(10) UNIQUE NOT NULL,
     nome_rota VARCHAR(100),
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- ← ADICIONADO
 );
@@ -156,9 +156,9 @@ CREATE TABLE viagens (
     lotacao_atual INTEGER CHECK (lotacao_atual >= 0),
     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- ← ADICIONADO
 
-    FOREIGN KEY (id_rota) REFERENCES rotas(id),
-    FOREIGN KEY (id_onibus) REFERENCES onibus(id),
-    FOREIGN KEY (id_motorista) REFERENCES motoristas(id)
+    FOREIGN KEY (id_rota) REFERENCES rotas(id) ON DELETE RESTRICT,
+    FOREIGN KEY (id_onibus) REFERENCES onibus(id) ON DELETE RESTRICT,
+    FOREIGN KEY (id_motorista) REFERENCES motoristas(id) ON DELETE RESTRICT
 );
 
 -- =====================================================
