@@ -823,6 +823,6 @@ def get_relatorio_paradas_estrategicas(limite: int = 15):
     - Ação urgente: 3 paradas inacessíveis com alto fluxo precisam de adequação imediata.
     """
     try:
-        return relatorios.relatorio_paradas_estratexgicas(limite)
+        return relatorios.relatorio_paradas_estrategicas(limite)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao gerar relatório: {str(e)}")

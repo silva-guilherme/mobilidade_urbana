@@ -348,7 +348,7 @@ def relatorio_correlacao_lotacao() -> List[Dict]:
         return fetch_all(cursor)
 
 
-def relatorio_paradas_estratexgicas(limite: int = 15) -> List[Dict]:
+def relatorio_paradas_estrategicas(limite: int = 15) -> List[Dict]:
     """
     Paradas mais estratégicas (mais movimentadas e com problemas de acessibilidade)
     """
