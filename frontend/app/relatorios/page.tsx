@@ -2,23 +2,24 @@
 
 import { useState } from "react";
 import api from "@/lib/api";
-import { 
-  Accessibility, 
-  Star, 
-  AlertTriangle, 
-  CreditCard, 
-  Bus, 
-  Users, 
-  Clock, 
-  MessageSquare, 
-  TrendingUp, 
-  PieChart, 
+import {
+  Accessibility,
+  Star,
+  AlertTriangle,
+  Bus,
+  Users,
+  Clock,
+  MessageCircle,
+  TrendingUp,
+  PieChart,
   MapPin,
-  Loader2,
+  X,
+  ArrowRight,
 } from "lucide-react";
 import { AxiosError } from "axios";
 
-// Interfaces para cada tipo de relatório
+/* ── Interfaces ─────────────────────────────────────── */
+
 interface RelatorioAcessibilidade {
   perfil_acessibilidade: string;
   total_passageiros: number;
@@ -98,9 +99,9 @@ interface TendenciaUso {
   total_embarques: number;
   passageiros_unicos: number;
   viagens_utilizadas: number;
-  motoristas_ativos: number;        // ← ADICIONADO
-  onibus_ativos: number;            // ← ADICIONADO
-  embarques_mes_anterior: number | null;  // ← ADICIONADO
+  motoristas_ativos: number;
+  onibus_ativos: number;
+  embarques_mes_anterior: number | null;
   crescimento_percentual: number;
 }
 
@@ -109,7 +110,7 @@ interface CorrelacaoLotacao {
   quantidade_feedbacks: number;
   lotacao_media_real: number;
   lotacao_min_real: number;
-  lotacao_max_real: number; 
+  lotacao_max_real: number;
   classificacao_real: string;
 }
 
@@ -124,7 +125,7 @@ interface ParadaEstrategica {
   classificacao: string;
 }
 
-type RelatorioResultado = 
+type RelatorioResultado =
   | RelatorioAcessibilidade[]
   | MotoristaDestaque[]
   | RotaCritica[]
@@ -137,567 +138,83 @@ type RelatorioResultado =
   | ParadaEstrategica[]
   | null;
 
-interface RelatorioCardProps {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  color: string;
-  onClick: () => void;
-}
+/* ── Dados dos relatórios ───────────────────────────── */
 
-function RelatorioCard({ title, description, icon, color, onClick }: RelatorioCardProps) {
-  return (
-    <div 
-      onClick={onClick} 
-      className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition border-l-4 cursor-pointer h-full"
-      style={{ borderColor: color.replace('border-', '') }}
-    >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <h3 className="font-bold text-gray-800 mb-2">{title}</h3>
-          <p className="text-sm text-gray-600">{description}</p>
-        </div>
-        <div className="text-gray-400 ml-4">{icon}</div>
-      </div>
-    </div>
-  );
-}
+const relatorios = [
+  {
+    title: "Acessibilidade",
+    description: "Embarques de PcD em paradas acessíveis",
+    icon: Accessibility,
+    endpoint: "/relatorios/acessibilidade",
+  },
+  {
+    title: "Motoristas Destaque",
+    description: "Ranking dos mais bem avaliados",
+    icon: Star,
+    endpoint: "/relatorios/motoristas-destaque",
+  },
+  {
+    title: "Rotas Críticas",
+    description: "Rotas com superlotação frequente",
+    icon: AlertTriangle,
+    endpoint: "/relatorios/rotas-criticas",
+  },
+  {
+    title: "Eficiência da Frota",
+    description: "Utilização e ocupação dos ônibus",
+    icon: Bus,
+    endpoint: "/relatorios/eficiencia-frota",
+  },
+  {
+    title: "Passageiros Frequentes",
+    description: "Quem mais usa o sistema",
+    icon: Users,
+    endpoint: "/relatorios/passageiros-frequentes",
+  },
+  {
+    title: "Horários de Pico",
+    description: "Períodos de maior movimento",
+    icon: Clock,
+    endpoint: "/relatorios/horarios-pico",
+  },
+  {
+    title: "Feedbacks Detalhado",
+    description: "Feedbacks com dados da viagem",
+    icon: MessageCircle,
+    endpoint: "/relatorios/feedbacks-detalhado",
+  },
+  {
+    title: "Tendência de Uso",
+    description: "Evolução mensal de embarques",
+    icon: TrendingUp,
+    endpoint: "/relatorios/tendencia-uso",
+  },
+  {
+    title: "Correlação de Lotação",
+    description: "Feedback vs lotação real",
+    icon: PieChart,
+    endpoint: "/relatorios/correlacao-lotacao",
+  },
+  {
+    title: "Paradas Estratégicas",
+    description: "Paradas mais movimentadas",
+    icon: MapPin,
+    endpoint: "/relatorios/paradas-estrategicas",
+  },
+];
 
-// Componentes de visualização para cada relatório
-function RelatorioAcessibilidadeView({ dados }: { dados: RelatorioAcessibilidade[] }) {
-  return (
-    <div className="space-y-4">
-      {dados.map((item, index) => (
-        <div key={index} className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="font-semibold text-lg mb-2 capitalize text-gray-900">{item.perfil_acessibilidade}</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">Total de Passageiros</p>
-              <p className="text-xl font-bold text-gray-900">{item.total_passageiros}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Total de Embarques</p>
-              <p className="text-xl font-bold text-gray-900">{item.total_embarques}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Embarques em Paradas Acessíveis</p>
-              <p className="text-xl font-bold text-gray-900">{item.embarques_paradas_acessiveis}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Percentual de Acessibilidade</p>
-              <p className={`text-xl font-bold ${
-                item.percentual_acessivel >= 90 ? 'text-green-600' : 
-                item.percentual_acessivel >= 70 ? 'text-yellow-600' : 
-                'text-red-600'
-              }`}>
-                {item.percentual_acessivel}%
-              </p>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function MotoristasDestaqueView({ dados }: { dados: MotoristaDestaque[] }) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CNH</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Viagens</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Feedbacks</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">% Positivo</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {dados.map((motorista) => (
-            <tr key={motorista.id} className="hover:bg-gray-50">
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{motorista.nome_completo}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{motorista.cnh}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{motorista.total_viagens}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{motorista.total_feedbacks}</td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`px-2 py-1 rounded-full text-xs ${
-                  motorista.percentual_feedbacks_positivos >= 70 ? 'bg-green-100 text-green-800' :
-                  motorista.percentual_feedbacks_positivos >= 50 ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {motorista.percentual_feedbacks_positivos}%
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function RotasCriticasView({ dados }: { dados: RotaCritica[] }) {
-  return (
-    <div className="space-y-4">
-      {dados.map((rota) => (
-        <div key={rota.id} className="bg-gray-50 p-4 rounded-lg">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-semibold text-lg text-gray-900">{rota.nome_rota}</h3>
-              <p className="text-sm text-gray-600">{rota.codigo_rota}</p>
-            </div>
-            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-              rota.percentual_critico >= 70 ? 'bg-red-100 text-red-800' :
-              rota.percentual_critico >= 50 ? 'bg-yellow-100 text-yellow-800' :
-              'bg-green-100 text-green-800'
-            }`}>
-              {rota.percentual_critico}% crítico
-            </span>
-          </div>
-          <div className="grid grid-cols-3 gap-4 mt-4">
-            <div>
-              <p className="text-xs text-gray-500">Total Viagens</p>
-              <p className="text-lg font-semibold text-gray-900">{rota.total_viagens}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Viagens Críticas</p>
-              <p className="text-lg font-semibold text-gray-900">{rota.viagens_criticas}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Lotação Média</p>
-              <p className="text-lg font-semibold text-gray-900">{rota.lotacao_media}</p>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function EficienciaFrotaView({ dados }: { dados: EficienciaFrota[] }) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Placa</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acessível</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Capacidade</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Viagens</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Passageiros</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ocupação</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {dados.map((onibus) => (
-            <tr key={onibus.id} className="hover:bg-gray-50">
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{onibus.placa}</td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`px-2 py-1 rounded-full text-xs ${
-                  onibus.acessivel === 'Sim' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {onibus.acessivel}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{onibus.capacidade_maxima}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{onibus.viagens_realizadas}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{onibus.passageiros_transportados}</td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center">
-                  <span className="mr-2 text-gray-900">{onibus.percentual_ocupacao_medio}%</span>
-                  <div className="w-16 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full ${
-                        onibus.percentual_ocupacao_medio > 90 ? 'bg-red-500' :
-                        onibus.percentual_ocupacao_medio > 70 ? 'bg-yellow-500' :
-                        'bg-green-500'
-                      }`}
-                      style={{ width: `${Math.min(onibus.percentual_ocupacao_medio, 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function PassageirosFrequentesView({ dados }: { dados: PassageiroFrequente[] }) {
-  return (
-    <div className="space-y-4">
-      {dados.map((passageiro) => (
-        <div key={passageiro.id} className="bg-gray-50 p-4 rounded-lg">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-semibold text-lg text-gray-900">{passageiro.nome_completo}</h3>
-              <p className="text-sm text-gray-600 capitalize">{passageiro.perfil_acessibilidade}</p>
-            </div>
-            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-              {passageiro.total_viagens} viagens
-            </span>
-          </div>
-          <div className="grid grid-cols-3 gap-4 mt-4">
-            <div>
-              <p className="text-xs text-gray-500">Feedbacks</p>
-              <p className="text-lg font-semibold text-gray-900">{passageiro.total_feedbacks}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Positivos</p>
-              <p className="text-lg font-semibold text-green-600">{passageiro.feedbacks_positivos}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Negativos</p>
-              <p className="text-lg font-semibold text-red-600">{passageiro.feedbacks_negativos}</p>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ==================== HORÁRIOS DE PICO ====================
-function HorariosPicoView({ dados }: { dados: HorarioPico[] }) {
-  if (!dados || dados.length === 0) {
-    return <p className="text-gray-500 text-center py-8">Nenhum dado encontrado para este relatório.</p>;
-  }
-
-  return (
-    <div className="space-y-4">
-      {dados.map((periodo, index) => (
-        <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <h3 className="font-semibold text-lg mb-3 text-gray-900 border-b border-gray-200 pb-2">
-            {periodo.periodo}
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-white p-3 rounded shadow-sm">
-              <p className="text-xs text-gray-500">Viagens</p>
-              <p className="text-xl font-bold text-gray-900">{periodo.total_viagens}</p>
-            </div>
-            <div className="bg-white p-3 rounded shadow-sm">
-              <p className="text-xs text-gray-500">Passageiros</p>
-              <p className="text-xl font-bold text-gray-900">{periodo.passageiros_transportados}</p>
-            </div>
-            <div className="bg-white p-3 rounded shadow-sm">
-              <p className="text-xs text-gray-500">Lotação Média</p>
-              <p className="text-xl font-bold text-gray-900">{periodo.lotacao_media}</p>
-            </div>
-            <div className="bg-white p-3 rounded shadow-sm">
-              <p className="text-xs text-gray-500">Pico</p>
-              <p className="text-xl font-bold text-gray-900">{periodo.pico_lotacao}</p>
-            </div>
-            <div className="bg-white p-3 rounded shadow-sm">
-              <p className="text-xs text-gray-500">Rotas Ativas</p>
-              <p className="text-xl font-bold text-gray-900">{periodo.rotas_ativas}</p>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function FeedbacksDetalhadoView({ dados }: { dados: FeedbackDetalhado[] }) {
-  return (
-    <div className="space-y-4">
-      {dados.map((feedback) => (
-        <div key={feedback.feedback_id} className="bg-gray-50 p-4 rounded-lg">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm text-gray-500">{new Date(feedback.data_feedback).toLocaleString('pt-BR')}</p>
-              <h3 className="font-semibold text-gray-900">{feedback.passageiro}</h3>
-            </div>
-            <span className={`px-2 py-1 rounded-full text-xs ${
-              feedback.tipo_ocorrencia === 'conduta' ? 'bg-green-100 text-green-800' :
-              feedback.tipo_ocorrencia === 'lotacao' ? 'bg-yellow-100 text-yellow-800' :
-              'bg-red-100 text-red-800'
-            }`}>
-              {feedback.tipo_ocorrencia}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-            <div>
-              <p className="text-xs text-gray-500">Rota</p>
-              <p className="text-sm text-gray-900">{feedback.nome_rota}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Motorista</p>
-              <p className="text-sm text-gray-900">{feedback.motorista}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Ônibus</p>
-              <p className="text-sm text-gray-900">{feedback.onibus_placa}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Lotação</p>
-              <p className="text-sm text-gray-900">Informada: {feedback.lotacao_informada} | Real: {feedback.lotacao_real}</p>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ==================== TENDÊNCIA DE USO ====================
-function TendenciaUsoView({ dados }: { dados: TendenciaUso[] }) {
-  if (!dados || dados.length === 0) {
-    return <p className="text-gray-500 text-center py-8">Nenhum dado encontrado para este relatório.</p>;
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Mês</th>
-            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Embarques</th>
-            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Passageiros</th>
-            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Viagens</th>
-            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Motoristas</th>
-            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Ônibus</th>
-            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Mês Anterior</th>
-            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Crescimento</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {dados.map((mes) => (
-            <tr key={mes.mes} className="hover:bg-gray-50 transition">
-              <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{mes.mes}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{mes.total_embarques}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{mes.passageiros_unicos}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{mes.viagens_utilizadas}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{mes.motoristas_ativos}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{mes.onibus_ativos}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900">{mes.embarques_mes_anterior ?? '-'}</td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  mes.crescimento_percentual > 0 ? 'bg-green-100 text-green-800' :
-                  mes.crescimento_percentual < 0 ? 'bg-red-100 text-red-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {mes.crescimento_percentual > 0 ? '+' : ''}{mes.crescimento_percentual}%
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-// ==================== CORRELAÇÃO DE LOTAÇÃO ====================
-function CorrelacaoLotacaoView({ dados }: { dados: CorrelacaoLotacao[] }) {
-  if (!dados || dados.length === 0) {
-    return <p className="text-gray-500 text-center py-8">Nenhum dado encontrado para este relatório.</p>;
-  }
-
-  // Encontrar valores máximos para as barras de progresso
-  const maxFeedbacks = Math.max(...dados.map(item => item.quantidade_feedbacks));
-
-  return (
-    <div className="space-y-4">
-      {dados.map((item) => {
-        // Calcular porcentagem para a barra de progresso
-        const porcentagem = Math.round((item.quantidade_feedbacks / maxFeedbacks) * 100);
-        
-        return (
-          <div key={item.feedback_lotacao} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <div className="flex flex-wrap items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-900 text-lg">
-                Feedback Nível {item.feedback_lotacao}
-              </h3>
-              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                {item.quantidade_feedbacks} feedbacks
-              </span>
-            </div>
-            
-            {/* Barra de progresso de quantidade */}
-            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-              <div 
-                className="bg-blue-600 h-2.5 rounded-full" 
-                style={{ width: `${porcentagem}%` }}
-              ></div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div className="bg-white p-4 rounded-lg shadow-sm">
-                <p className="text-xs text-gray-500 mb-1">Lotação Média Real</p>
-                <p className="text-2xl font-bold text-gray-900">{item.lotacao_media_real}</p>
-                <div className="flex justify-between text-xs text-gray-500 mt-2">
-                  <span>Mín: {item.lotacao_min_real}</span>
-                  <span>Máx: {item.lotacao_max_real}</span>
-                </div>
-              </div>
-              
-              <div className="bg-white p-4 rounded-lg shadow-sm">
-                <p className="text-xs text-gray-500 mb-1">Classificação Real</p>
-                <p className={`text-xl font-bold ${
-                  item.classificacao_real.includes('Lotada') ? 'text-red-600' :
-                  item.classificacao_real.includes('Alta') ? 'text-yellow-600' :
-                  item.classificacao_real.includes('Média') ? 'text-blue-600' :
-                  'text-green-600'
-                }`}>
-                  {item.classificacao_real}
-                </p>
-                <p className="text-xs text-gray-500 mt-2">
-                  {item.feedback_lotacao === 1 && item.lotacao_media_real > 30 ? '⚠️ Superestimado' : 
-                   item.feedback_lotacao === 5 && item.lotacao_media_real < 50 ? '⚠️ Subestimado' : 
-                   '✓ Consistente'}
-                </p>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function ParadasEstrategicasView({ dados }: { dados: ParadaEstrategica[] }) {
-  return (
-    <div className="space-y-4">
-      {dados.map((parada) => (
-        <div key={parada.id} className="bg-gray-50 p-4 rounded-lg">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-semibold text-gray-900">Parada #{parada.id}</h3>
-              <p className="text-xs text-gray-500">
-                Lat: {parada.latitude.toFixed(6)} | Long: {parada.longitude.toFixed(6)}
-              </p>
-            </div>
-            <span className={`px-3 py-1 rounded-full text-sm ${
-              parada.classificacao === 'CRÍTICA' ? 'bg-red-100 text-red-800' :
-              parada.classificacao.includes('Super') ? 'bg-yellow-100 text-yellow-800' :
-              'bg-green-100 text-green-800'
-            }`}>
-              {parada.classificacao}
-            </span>
-          </div>
-          <div className="grid grid-cols-3 gap-4 mt-4">
-            <div>
-              <p className="text-xs text-gray-500">Acessibilidade</p>
-              <p className={`text-sm font-semibold ${
-                parada.status_acessibilidade === 'acessivel' ? 'text-green-600' :
-                parada.status_acessibilidade === 'inacessivel' ? 'text-red-600' :
-                'text-yellow-600'
-              }`}>
-                {parada.status_acessibilidade}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Embarques</p>
-              <p className="text-lg font-semibold text-gray-900">{parada.total_embarques}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Rotas</p>
-              <p className="text-lg font-semibold text-gray-900">{parada.rotas_que_passam}</p>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+/* ── Página principal ───────────────────────────────── */
 
 export default function RelatoriosPage() {
   const [resultado, setResultado] = useState<RelatorioResultado>(null);
   const [loading, setLoading] = useState(false);
   const [relatorioAtivo, setRelatorioAtivo] = useState("");
 
-  const relatorios = [
-    {
-      title: "Acessibilidade",
-      description: "Passageiros com necessidades especiais estão embarcando em paradas acessíveis?",
-      icon: <Accessibility className="w-8 h-8" />,
-      color: "border-blue-500",
-      endpoint: "/relatorios/acessibilidade",
-      componente: "acessibilidade"
-    },
-    {
-      title: "Motoristas Destaque",
-      description: "Ranking dos motoristas mais bem avaliados",
-      icon: <Star className="w-8 h-8" />,
-      color: "border-yellow-500",
-      endpoint: "/relatorios/motoristas-destaque",
-      componente: "motoristas"
-    },
-    {
-      title: "Rotas Críticas",
-      description: "Rotas com problemas frequentes de superlotação",
-      icon: <AlertTriangle className="w-8 h-8" />,
-      color: "border-red-500",
-      endpoint: "/relatorios/rotas-criticas",
-      componente: "rotas"
-    },
-    {
-      title: "Eficiência da Frota",
-      description: "Desempenho e utilização dos ônibus",
-      icon: <Bus className="w-8 h-8" />,
-      color: "border-purple-500",
-      endpoint: "/relatorios/eficiencia-frota",
-      componente: "frota"
-    },
-    {
-      title: "Passageiros Frequentes",
-      description: "Quem mais usa o sistema e como avalia",
-      icon: <Users className="w-8 h-8" />,
-      color: "border-indigo-500",
-      endpoint: "/relatorios/passageiros-frequentes",
-      componente: "passageiros"
-    },
-    {
-      title: "Horários de Pico",
-      description: "Períodos de maior movimento",
-      icon: <Clock className="w-8 h-8" />,
-      color: "border-pink-500",
-      endpoint: "/relatorios/horarios-pico",
-      componente: "horarios"
-    },
-    {
-      title: "Feedbacks Detalhado",
-      description: "Feedbacks com todos os dados da viagem",
-      icon: <MessageSquare className="w-8 h-8" />,
-      color: "border-teal-500",
-      endpoint: "/relatorios/feedbacks-detalhado",
-      componente: "feedbacks"
-    },
-    {
-      title: "Tendência de Uso",
-      description: "Evolução mensal de embarques",
-      icon: <TrendingUp className="w-8 h-8" />,
-      color: "border-cyan-500",
-      endpoint: "/relatorios/tendencia-uso",
-      componente: "tendencia"
-    },
-    {
-      title: "Correlação de Lotação",
-      description: "Feedback vs lotação real",
-      icon: <PieChart className="w-8 h-8" />,
-      color: "border-orange-500",
-      endpoint: "/relatorios/correlacao-lotacao",
-      componente: "correlacao"
-    },
-    {
-      title: "Paradas Estratégicas",
-      description: "Paradas mais movimentadas e críticas",
-      icon: <MapPin className="w-8 h-8" />,
-      color: "border-emerald-500",
-      endpoint: "/relatorios/paradas-estrategicas",
-      componente: "paradas"
-    }
-  ];
-
   async function executarRelatorio(endpoint: string, titulo: string) {
     setLoading(true);
     setRelatorioAtivo(titulo);
     setResultado(null);
-    
+
     try {
       const response = await api.get(endpoint);
       setResultado(response.data);
@@ -712,97 +229,451 @@ export default function RelatoriosPage() {
 
   function renderizarResultado() {
     if (!resultado) return null;
-    
-    // Usando o título original (sem converter para minúsculas)
-    if (relatorioAtivo === "Horários de Pico") {
-      return <HorariosPicoView dados={resultado as HorarioPico[]} />;
-    }
-    if (relatorioAtivo === "Tendência de Uso") {
-      return <TendenciaUsoView dados={resultado as TendenciaUso[]} />;
-    }
-    if (relatorioAtivo === "Correlação de Lotação") {
-      return <CorrelacaoLotacaoView dados={resultado as CorrelacaoLotacao[]} />;
-    }
-    if (relatorioAtivo === "Acessibilidade") {
-      return <RelatorioAcessibilidadeView dados={resultado as RelatorioAcessibilidade[]} />;
-    }
-    if (relatorioAtivo === "Motoristas Destaque") {
-      return <MotoristasDestaqueView dados={resultado as MotoristaDestaque[]} />;
-    }
-    if (relatorioAtivo === "Rotas Críticas") {
-      return <RotasCriticasView dados={resultado as RotaCritica[]} />;
-    }
-    if (relatorioAtivo === "Eficiência da Frota") {
-      return <EficienciaFrotaView dados={resultado as EficienciaFrota[]} />;
-    }
-    if (relatorioAtivo === "Passageiros Frequentes") {
-      return <PassageirosFrequentesView dados={resultado as PassageiroFrequente[]} />;
-    }
-    if (relatorioAtivo === "Feedbacks Detalhado") {
-      return <FeedbacksDetalhadoView dados={resultado as FeedbackDetalhado[]} />;
-    }
-    if (relatorioAtivo === "Paradas Estratégicas") {
-      return <ParadasEstrategicasView dados={resultado as ParadaEstrategica[]} />;
-    }
-    
-    // Fallback: se não encontrar, mostra como JSON
-    return <pre className="text-gray-900">{JSON.stringify(resultado, null, 2)}</pre>;
+
+    const views: Record<string, React.ReactNode> = {
+      "Acessibilidade": <AcessibilidadeView dados={resultado as RelatorioAcessibilidade[]} />,
+      "Motoristas Destaque": <MotoristasDestaqueView dados={resultado as MotoristaDestaque[]} />,
+      "Rotas Críticas": <RotasCriticasView dados={resultado as RotaCritica[]} />,
+      "Eficiência da Frota": <EficienciaFrotaView dados={resultado as EficienciaFrota[]} />,
+      "Passageiros Frequentes": <PassageirosFrequentesView dados={resultado as PassageiroFrequente[]} />,
+      "Horários de Pico": <HorariosPicoView dados={resultado as HorarioPico[]} />,
+      "Feedbacks Detalhado": <FeedbacksDetalhadoView dados={resultado as FeedbackDetalhado[]} />,
+      "Tendência de Uso": <TendenciaUsoView dados={resultado as TendenciaUso[]} />,
+      "Correlação de Lotação": <CorrelacaoLotacaoView dados={resultado as CorrelacaoLotacao[]} />,
+      "Paradas Estratégicas": <ParadasEstrategicasView dados={resultado as ParadaEstrategica[]} />,
+    };
+
+    return views[relatorioAtivo] ?? <pre className="text-sm text-slate-600">{JSON.stringify(resultado, null, 2)}</pre>;
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">Relatórios</h1>
-        <p className="text-gray-600">Análises estratégicas do sistema de mobilidade</p>
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-slate-800">Relatórios</h1>
+        <p className="text-sm text-slate-500 mt-1">Análises estratégicas do sistema de mobilidade</p>
       </div>
 
-      {/* Cards de Relatórios */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {relatorios.map((rel) => (
-          <RelatorioCard
-            key={rel.title}
-            title={rel.title}
-            description={rel.description}
-            icon={rel.icon}
-            color={rel.color}
-            onClick={() => executarRelatorio(rel.endpoint, rel.title)}
-          />
-        ))}
+      {/* Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
+        {relatorios.map((rel) => {
+          const Icon = rel.icon;
+          const isActive = relatorioAtivo === rel.title && resultado !== null;
+          return (
+            <button
+              key={rel.title}
+              onClick={() => executarRelatorio(rel.endpoint, rel.title)}
+              className={`group text-left bg-white border rounded-lg p-4 transition-colors ${
+                isActive
+                  ? "border-emerald-300 ring-1 ring-emerald-200"
+                  : "border-slate-200 hover:border-slate-300"
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-700">{rel.title}</p>
+                  <p className="text-xs text-slate-400 mt-1">{rel.description}</p>
+                </div>
+                <Icon className={`w-5 h-5 flex-shrink-0 ml-3 ${
+                  isActive ? "text-emerald-500" : "text-slate-300 group-hover:text-slate-400"
+                }`} />
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Resultado do Relatório */}
+      {/* Loading */}
       {loading && (
-        <div className="flex flex-col items-center justify-center py-12">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mb-4" />
-          <p className="text-gray-600">Carregando relatório...</p>
+        <div className="flex items-center justify-center py-16">
+          <div className="w-6 h-6 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin" />
+          <span className="ml-3 text-sm text-slate-500">Carregando relatório...</span>
         </div>
       )}
 
+      {/* Resultado */}
       {resultado && !loading && (
-        <div className="bg-white rounded-lg shadow-md p-6 mt-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-800">
-              Resultado: {relatorioAtivo}
-            </h2>
+        <div className="bg-white border border-slate-200 rounded-lg">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            <h2 className="text-sm font-semibold text-slate-700">{relatorioAtivo}</h2>
             <button
-              onClick={() => setResultado(null)}
-              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
+              onClick={() => { setResultado(null); setRelatorioAtivo(""); }}
+              className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
             >
-              Fechar
+              <X className="w-4 h-4" />
             </button>
           </div>
-          
-          <div className="bg-gray-50 p-4 rounded-lg overflow-auto max-h-96">
+          <div className="p-5 overflow-auto max-h-[32rem]">
             {renderizarResultado()}
           </div>
         </div>
       )}
 
       {!loading && !resultado && (
-        <div className="text-center py-12 text-gray-500">
-          Clique em um card para visualizar o relatório
+        <div className="text-center py-16 text-sm text-slate-400">
+          Selecione um relatório acima para visualizar
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Helpers ─────────────────────────────────────────── */
+
+function Stat({ label, value, accent }: { label: string; value: string | number; accent?: string }) {
+  return (
+    <div>
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className={`text-lg font-semibold mt-0.5 ${accent || "text-slate-700"}`}>{value}</p>
+    </div>
+  );
+}
+
+function Badge({ children, variant = "default" }: { children: React.ReactNode; variant?: "success" | "warning" | "danger" | "info" | "default" }) {
+  const colors = {
+    success: "bg-emerald-50 text-emerald-700",
+    warning: "bg-amber-50 text-amber-700",
+    danger: "bg-red-50 text-red-700",
+    info: "bg-sky-50 text-sky-700",
+    default: "bg-slate-100 text-slate-600",
+  };
+  return <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded ${colors[variant]}`}>{children}</span>;
+}
+
+function EmptyState() {
+  return <p className="text-sm text-slate-400 text-center py-8">Nenhum dado encontrado.</p>;
+}
+
+/* ── Views de cada relatório ────────────────────────── */
+
+function AcessibilidadeView({ dados }: { dados: RelatorioAcessibilidade[] }) {
+  return (
+    <div className="space-y-3">
+      {dados.map((item, i) => (
+        <div key={i} className="bg-slate-50 rounded-md p-4">
+          <p className="text-sm font-medium text-slate-700 capitalize mb-3">{item.perfil_acessibilidade}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <Stat label="Passageiros" value={item.total_passageiros} />
+            <Stat label="Embarques" value={item.total_embarques} />
+            <Stat label="Em paradas acessíveis" value={item.embarques_paradas_acessiveis} />
+            <Stat
+              label="% Acessibilidade"
+              value={`${item.percentual_acessivel}%`}
+              accent={
+                item.percentual_acessivel >= 90 ? "text-emerald-600" :
+                item.percentual_acessivel >= 70 ? "text-amber-600" :
+                "text-red-600"
+              }
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MotoristasDestaqueView({ dados }: { dados: MotoristaDestaque[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-slate-100">
+        <thead>
+          <tr className="bg-slate-50/80">
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Nome</th>
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">CNH</th>
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Viagens</th>
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Feedbacks</th>
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">% Positivo</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {dados.map((m) => (
+            <tr key={m.id} className="hover:bg-slate-50/50">
+              <td className="px-4 py-3 text-sm text-slate-700">{m.nome_completo}</td>
+              <td className="px-4 py-3 text-sm text-slate-500 font-mono">{m.cnh}</td>
+              <td className="px-4 py-3 text-sm text-slate-700">{m.total_viagens}</td>
+              <td className="px-4 py-3 text-sm text-slate-700">{m.total_feedbacks}</td>
+              <td className="px-4 py-3">
+                <Badge variant={m.percentual_feedbacks_positivos >= 70 ? "success" : m.percentual_feedbacks_positivos >= 50 ? "warning" : "danger"}>
+                  {m.percentual_feedbacks_positivos}%
+                </Badge>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function RotasCriticasView({ dados }: { dados: RotaCritica[] }) {
+  return (
+    <div className="space-y-3">
+      {dados.map((rota) => (
+        <div key={rota.id} className="bg-slate-50 rounded-md p-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-slate-700">{rota.nome_rota}</p>
+              <p className="text-xs text-slate-400 font-mono">{rota.codigo_rota}</p>
+            </div>
+            <Badge variant={rota.percentual_critico >= 70 ? "danger" : rota.percentual_critico >= 50 ? "warning" : "success"}>
+              {rota.percentual_critico}% crítico
+            </Badge>
+          </div>
+          <div className="grid grid-cols-3 gap-4 mt-3">
+            <Stat label="Viagens" value={rota.total_viagens} />
+            <Stat label="Críticas" value={rota.viagens_criticas} />
+            <Stat label="Lotação média" value={rota.lotacao_media} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EficienciaFrotaView({ dados }: { dados: EficienciaFrota[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-slate-100">
+        <thead>
+          <tr className="bg-slate-50/80">
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Placa</th>
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Acessível</th>
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Capacidade</th>
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Viagens</th>
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Passageiros</th>
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Ocupação</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {dados.map((o) => (
+            <tr key={o.id} className="hover:bg-slate-50/50">
+              <td className="px-4 py-3 text-sm text-slate-700 font-mono">{o.placa}</td>
+              <td className="px-4 py-3">
+                <Badge variant={o.acessivel === "Sim" ? "success" : "default"}>{o.acessivel}</Badge>
+              </td>
+              <td className="px-4 py-3 text-sm text-slate-500">{o.capacidade_maxima}</td>
+              <td className="px-4 py-3 text-sm text-slate-700">{o.viagens_realizadas}</td>
+              <td className="px-4 py-3 text-sm text-slate-700">{o.passageiros_transportados}</td>
+              <td className="px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-700">{o.percentual_ocupacao_medio}%</span>
+                  <div className="w-16 bg-slate-200 rounded-full h-1.5">
+                    <div
+                      className={`h-1.5 rounded-full ${
+                        o.percentual_ocupacao_medio > 90 ? "bg-red-500" :
+                        o.percentual_ocupacao_medio > 70 ? "bg-amber-500" :
+                        "bg-emerald-500"
+                      }`}
+                      style={{ width: `${Math.min(o.percentual_ocupacao_medio, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function PassageirosFrequentesView({ dados }: { dados: PassageiroFrequente[] }) {
+  return (
+    <div className="space-y-3">
+      {dados.map((p) => (
+        <div key={p.id} className="bg-slate-50 rounded-md p-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-slate-700">{p.nome_completo}</p>
+              <p className="text-xs text-slate-400 capitalize">{p.perfil_acessibilidade}</p>
+            </div>
+            <Badge variant="info">{p.total_viagens} viagens</Badge>
+          </div>
+          <div className="grid grid-cols-3 gap-4 mt-3">
+            <Stat label="Feedbacks" value={p.total_feedbacks} />
+            <Stat label="Positivos" value={p.feedbacks_positivos} accent="text-emerald-600" />
+            <Stat label="Negativos" value={p.feedbacks_negativos} accent="text-red-600" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function HorariosPicoView({ dados }: { dados: HorarioPico[] }) {
+  if (!dados?.length) return <EmptyState />;
+
+  return (
+    <div className="space-y-3">
+      {dados.map((p, i) => (
+        <div key={i} className="bg-slate-50 rounded-md p-4">
+          <p className="text-sm font-medium text-slate-700 mb-3">{p.periodo}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+            <Stat label="Viagens" value={p.total_viagens} />
+            <Stat label="Passageiros" value={p.passageiros_transportados} />
+            <Stat label="Lotação média" value={p.lotacao_media} />
+            <Stat label="Pico" value={p.pico_lotacao} />
+            <Stat label="Rotas ativas" value={p.rotas_ativas} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FeedbacksDetalhadoView({ dados }: { dados: FeedbackDetalhado[] }) {
+  return (
+    <div className="space-y-3">
+      {dados.map((f) => (
+        <div key={f.feedback_id} className="bg-slate-50 rounded-md p-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-xs text-slate-400">{new Date(f.data_feedback).toLocaleString("pt-BR")}</p>
+              <p className="text-sm font-medium text-slate-700">{f.passageiro}</p>
+            </div>
+            <Badge variant={
+              f.tipo_ocorrencia === "conduta" ? "success" :
+              f.tipo_ocorrencia === "lotacao" ? "warning" : "danger"
+            }>
+              {f.tipo_ocorrencia}
+            </Badge>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-3">
+            <Stat label="Rota" value={f.nome_rota} />
+            <Stat label="Motorista" value={f.motorista} />
+            <Stat label="Ônibus" value={f.onibus_placa} />
+            <div>
+              <p className="text-xs text-slate-400">Lotação</p>
+              <p className="text-sm text-slate-700 mt-0.5">
+                Inf. {f.lotacao_informada} | Real {f.lotacao_real}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TendenciaUsoView({ dados }: { dados: TendenciaUso[] }) {
+  if (!dados?.length) return <EmptyState />;
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-slate-100">
+        <thead>
+          <tr className="bg-slate-50/80">
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Mês</th>
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Embarques</th>
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Passageiros</th>
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Viagens</th>
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Motoristas</th>
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Ônibus</th>
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Anterior</th>
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Crescimento</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {dados.map((m) => (
+            <tr key={m.mes} className="hover:bg-slate-50/50">
+              <td className="px-4 py-3 text-sm font-medium text-slate-700">{m.mes}</td>
+              <td className="px-4 py-3 text-sm text-slate-700">{m.total_embarques}</td>
+              <td className="px-4 py-3 text-sm text-slate-500">{m.passageiros_unicos}</td>
+              <td className="px-4 py-3 text-sm text-slate-500">{m.viagens_utilizadas}</td>
+              <td className="px-4 py-3 text-sm text-slate-500">{m.motoristas_ativos}</td>
+              <td className="px-4 py-3 text-sm text-slate-500">{m.onibus_ativos}</td>
+              <td className="px-4 py-3 text-sm text-slate-500">{m.embarques_mes_anterior ?? "—"}</td>
+              <td className="px-4 py-3">
+                <Badge variant={m.crescimento_percentual > 0 ? "success" : m.crescimento_percentual < 0 ? "danger" : "default"}>
+                  {m.crescimento_percentual > 0 ? "+" : ""}{m.crescimento_percentual}%
+                </Badge>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function CorrelacaoLotacaoView({ dados }: { dados: CorrelacaoLotacao[] }) {
+  if (!dados?.length) return <EmptyState />;
+
+  const maxFeedbacks = Math.max(...dados.map((d) => d.quantidade_feedbacks));
+
+  return (
+    <div className="space-y-3">
+      {dados.map((item) => {
+        const pct = Math.round((item.quantidade_feedbacks / maxFeedbacks) * 100);
+        return (
+          <div key={item.feedback_lotacao} className="bg-slate-50 rounded-md p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-medium text-slate-700">Nível {item.feedback_lotacao}</p>
+              <Badge variant="info">{item.quantidade_feedbacks} feedbacks</Badge>
+            </div>
+            <div className="w-full bg-slate-200 rounded-full h-1.5 mb-4">
+              <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-slate-400">Lotação média real</p>
+                <p className="text-2xl font-semibold text-slate-700">{item.lotacao_media_real}</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Mín {item.lotacao_min_real} · Máx {item.lotacao_max_real}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400">Classificação real</p>
+                <p className={`text-lg font-semibold mt-0.5 ${
+                  item.classificacao_real.includes("Lotada") ? "text-red-600" :
+                  item.classificacao_real.includes("Alta") ? "text-amber-600" :
+                  item.classificacao_real.includes("Média") ? "text-sky-600" :
+                  "text-emerald-600"
+                }`}>
+                  {item.classificacao_real}
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ParadasEstrategicasView({ dados }: { dados: ParadaEstrategica[] }) {
+  return (
+    <div className="space-y-3">
+      {dados.map((p) => (
+        <div key={p.id} className="bg-slate-50 rounded-md p-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-slate-700">Parada #{p.id}</p>
+              <p className="text-xs text-slate-400 font-mono">
+                {p.latitude.toFixed(6)}, {p.longitude.toFixed(6)}
+              </p>
+            </div>
+            <Badge variant={
+              p.classificacao === "CRÍTICA" ? "danger" :
+              p.classificacao.includes("Super") ? "warning" : "success"
+            }>
+              {p.classificacao}
+            </Badge>
+          </div>
+          <div className="grid grid-cols-3 gap-4 mt-3">
+            <Stat
+              label="Acessibilidade"
+              value={p.status_acessibilidade}
+              accent={
+                p.status_acessibilidade === "acessivel" ? "text-emerald-600" :
+                p.status_acessibilidade === "inacessivel" ? "text-red-600" :
+                "text-amber-600"
+              }
+            />
+            <Stat label="Embarques" value={p.total_embarques} />
+            <Stat label="Rotas" value={p.rotas_que_passam} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

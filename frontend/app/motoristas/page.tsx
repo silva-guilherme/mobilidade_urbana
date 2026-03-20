@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { Users, Edit, Trash2, Plus } from "lucide-react";
+import { Edit, Trash2, Plus, X } from "lucide-react";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 interface Motorista {
   id: number;
@@ -17,8 +18,9 @@ export default function MotoristasPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  
-  // Form state
+
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+
   const [nome, setNome] = useState("");
   const [cnh, setCnh] = useState("");
   const [status, setStatus] = useState("ativo");
@@ -41,7 +43,7 @@ export default function MotoristasPage() {
 
   async function salvarMotorista(e: React.FormEvent) {
     e.preventDefault();
-    
+
     const payload = {
       nome_completo: nome,
       cnh,
@@ -55,7 +57,7 @@ export default function MotoristasPage() {
       } else {
         await api.post("/motoristas", payload);
       }
-      
+
       resetForm();
       carregarMotoristas();
     } catch (error) {
@@ -63,14 +65,15 @@ export default function MotoristasPage() {
     }
   }
 
-  async function deletarMotorista(id: number) {
-    if (!confirm("Tem certeza?")) return;
-    
+  async function confirmarDelete() {
+    if (!deleteTarget) return;
     try {
-      await api.delete(`/motoristas/${id}`);
+      await api.delete(`/motoristas/${deleteTarget}`);
       carregarMotoristas();
     } catch (error) {
       alert("Erro ao deletar");
+    } finally {
+      setDeleteTarget(null);
     }
   }
 
@@ -94,17 +97,17 @@ export default function MotoristasPage() {
 
   const getStatusColor = (status: string) => {
     switch(status) {
-      case "ativo": return "bg-green-100 text-green-800";
-      case "suspenso": return "bg-red-100 text-red-800";
-      case "ferias": return "bg-yellow-100 text-yellow-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "ativo": return "bg-emerald-50 text-emerald-700";
+      case "suspenso": return "bg-red-50 text-red-700";
+      case "ferias": return "bg-amber-50 text-amber-700";
+      default: return "bg-slate-100 text-slate-600";
     }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="w-6 h-6 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin" />
       </div>
     );
   }
@@ -113,93 +116,98 @@ export default function MotoristasPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Motoristas</h1>
-          <p className="text-gray-600">Gerencie os motoristas do sistema</p>
+          <h1 className="text-2xl font-semibold text-slate-800">Motoristas</h1>
+          <p className="text-sm text-slate-500 mt-1">Gerencie os motoristas do sistema</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm rounded-md hover:bg-slate-800 transition-colors"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4" />
           Novo Motorista
         </button>
       </div>
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">
-              {editingId ? "Editar Motorista" : "Novo Motorista"}
-            </h2>
-            
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg border border-slate-200 p-6 w-full max-w-md shadow-lg">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-slate-800">
+                {editingId ? "Editar Motorista" : "Novo Motorista"}
+              </h2>
+              <button onClick={resetForm} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
             <form onSubmit={salvarMotorista} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">
                   Nome Completo *
                 </label>
                 <input
                   type="text"
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">
                   CNH *
                 </label>
                 <input
                   type="text"
                   value={cnh}
                   onChange={(e) => setCnh(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   maxLength={11}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">
                   Status *
                 </label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 >
-                  <option value="ativo" className="text-gray-900">Ativo</option>
-                  <option value="suspenso" className="text-gray-900">Suspenso</option>
-                  <option value="ferias" className="text-gray-900">Férias</option>
+                  <option value="ativo">Ativo</option>
+                  <option value="suspenso">Suspenso</option>
+                  <option value="ferias">Férias</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">
                   Telefone
                 </label>
                 <input
                   type="text"
                   value={telefone}
                   onChange={(e) => setTelefone(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   placeholder="(XX) XXXXX-XXXX"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-emerald-600 text-white text-sm rounded-md hover:bg-emerald-700 transition-colors"
                 >
                   {editingId ? "Atualizar" : "Cadastrar"}
                 </button>
@@ -209,58 +217,67 @@ export default function MotoristasPage() {
         </div>
       )}
 
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        message="Tem certeza que deseja excluir este motorista?"
+        onConfirm={confirmarDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
       {/* Tabela */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <table className="min-w-full divide-y divide-slate-100">
+          <thead>
+            <tr className="bg-slate-50/80">
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                 Nome
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                 CNH
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                 Telefone
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                 Ações
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-slate-100">
             {motoristas.map((m) => (
-              <tr key={m.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <tr key={m.id} className="hover:bg-slate-50/50 transition-colors">
+                <td className="px-5 py-3.5 text-sm text-slate-700">
                   {m.nome_completo}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-5 py-3.5 text-sm text-slate-500 font-mono">
                   {m.cnh}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(m.status)}`}>
+                <td className="px-5 py-3.5">
+                  <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded ${getStatusColor(m.status)}`}>
                     {m.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {m.telefones?.[0]?.numero || "-"}
+                <td className="px-5 py-3.5 text-sm text-slate-500">
+                  {m.telefones?.[0]?.numero || "—"}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <button
-                    onClick={() => editarMotorista(m)}
-                    className="text-blue-600 hover:text-blue-900 mr-3"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => deletarMotorista(m.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => editarMotorista(m)}
+                      className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(m.id)}
+                      className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
