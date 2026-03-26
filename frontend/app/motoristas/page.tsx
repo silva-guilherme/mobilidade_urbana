@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { Edit, Trash2, Plus, X } from "lucide-react";
+import { Edit, Trash2, Plus, X, Search } from "lucide-react";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 interface Motorista {
@@ -26,13 +26,19 @@ export default function MotoristasPage() {
   const [status, setStatus] = useState("ativo");
   const [telefone, setTelefone] = useState("");
 
+  const [busca, setBusca] = useState("");
+  const [filtroStatus, setFiltroStatus] = useState("");
+
   useEffect(() => {
     carregarMotoristas();
-  }, []);
+  }, [busca, filtroStatus]);
 
   async function carregarMotoristas() {
     try {
-      const res = await api.get("/motoristas");
+      const params: Record<string, string> = {};
+      if (busca) params.search = busca;
+      if (filtroStatus) params.status = filtroStatus;
+      const res = await api.get("/motoristas", { params });
       setMotoristas(res.data);
     } catch (error) {
       console.error(error);
@@ -224,7 +230,29 @@ export default function MotoristasPage() {
         onCancel={() => setDeleteTarget(null)}
       />
 
-      {/* Tabela */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por nome..."
+            className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          />
+        </div>
+        <select
+          value={filtroStatus}
+          onChange={(e) => setFiltroStatus(e.target.value)}
+          className="px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+        >
+          <option value="">Todos os status</option>
+          <option value="ativo">Ativo</option>
+          <option value="suspenso">Suspenso</option>
+          <option value="ferias">Férias</option>
+        </select>
+      </div>
+
       <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-slate-100">
           <thead>

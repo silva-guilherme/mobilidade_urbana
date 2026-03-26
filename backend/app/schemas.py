@@ -4,9 +4,6 @@ from datetime import datetime, time
 from enum import Enum
 
 
-# ==============================
-# ENUMS (igual ao banco de dados)
-# ==============================
 
 class PerfilAcessibilidade(str, Enum):
     nenhum = "nenhum"
@@ -47,9 +44,7 @@ class TipoTelefone(str, Enum):
     emergencia = "emergencia"
 
 
-# ==============================
-# EMAIL PASSAGEIRO (sub-model)
-# ==============================
+
 
 class EmailPassageiroBase(BaseModel):
     email: str
@@ -67,9 +62,6 @@ class EmailPassageiro(EmailPassageiroBase):
         from_attributes = True
 
 
-# ==============================
-# PASSAGEIRO
-# ==============================
 
 class PassageiroBase(BaseModel):
     nome_completo: str
@@ -77,8 +69,7 @@ class PassageiroBase(BaseModel):
 
 
 class PassageiroCreate(PassageiroBase):
-    emails: Optional[List[str]] = None  # Para criar com emails
-
+    emails: Optional[List[str]] = None  
 
 class Passageiro(PassageiroBase):
     id: int
@@ -89,9 +80,7 @@ class Passageiro(PassageiroBase):
         from_attributes = True
 
 
-# ==============================
-# TELEFONE MOTORISTA (sub-model)
-# ==============================
+
 
 class TelefoneMotoristaBase(BaseModel):
     numero: str
@@ -110,9 +99,7 @@ class TelefoneMotorista(TelefoneMotoristaBase):
         from_attributes = True
 
 
-# ==============================
-# MOTORISTA
-# ==============================
+
 
 class MotoristaBase(BaseModel):
     nome_completo: str
@@ -147,9 +134,6 @@ class Motorista(MotoristaBase):
         from_attributes = True
 
 
-# ==============================
-# ONIBUS
-# ==============================
 
 class OnibusBase(BaseModel):
     placa: str
@@ -169,9 +153,7 @@ class Onibus(OnibusBase):
         from_attributes = True
 
 
-# ==============================
-# ROTAS
-# ==============================
+
 
 class RotaBase(BaseModel):
     codigo_rota: str
@@ -189,10 +171,6 @@ class Rota(RotaBase):
     class Config:
         from_attributes = True
 
-
-# ==============================
-# PARADAS
-# ==============================
 
 class ParadaBase(BaseModel):
     latitude: float
@@ -212,9 +190,7 @@ class Parada(ParadaBase):
         from_attributes = True
 
 
-# ==============================
-# ITINERARIO (Rota_Parada)
-# ==============================
+
 
 class ItinerarioBase(BaseModel):
     id_rota: int
@@ -234,16 +210,13 @@ class Itinerario(ItinerarioBase):
         from_attributes = True
 
 
-# ==============================
-# VIAGENS
-# ==============================
 
 class ViagemBase(BaseModel):
     id_rota: int
     id_onibus: int
     id_motorista: int
     horario_saida: time
-    lotacao_atual: int = 0  # Default 0
+    lotacao_atual: int = 0  
 
 
 class ViagemCreate(ViagemBase):
@@ -257,10 +230,6 @@ class Viagem(ViagemBase):
     class Config:
         from_attributes = True
 
-
-# ==============================
-# EMBARQUE
-# ==============================
 
 class EmbarqueBase(BaseModel):
     id_viagem: int
@@ -281,9 +250,6 @@ class Embarque(EmbarqueBase):
         from_attributes = True
 
 
-# ==============================
-# FEEDBACK
-# ==============================
 
 class FeedbackBase(BaseModel):
     id_passageiro: int
