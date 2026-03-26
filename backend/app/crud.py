@@ -10,9 +10,6 @@ from psycopg2 import sql
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ==============================
-# CONTEXT MANAGER PARA CONEXÕES
-# ==============================
 
 @contextmanager
 def get_cursor(commit: bool = False, dict_cursor: bool = True):
@@ -39,9 +36,6 @@ def get_cursor(commit: bool = False, dict_cursor: bool = True):
         if conn:
             conn.close()
 
-# ==============================
-# UTILITÁRIOS
-# ==============================
 
 def fetch_one_or_none(cursor):
     """Retorna um registro ou None"""
@@ -56,9 +50,7 @@ def row_to_dict(columns, row):
     """Converte uma linha em dicionário"""
     return dict(zip(columns, row)) if row else None
 
-# ==============================
-# PASSAGEIRO
-# ==============================
+
 
 def criar_passageiro(passageiro: schemas.PassageiroCreate) -> Optional[Dict]:
     """

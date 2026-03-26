@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { Map, Edit, Trash2, Plus} from "lucide-react";
-import Link from "next/link";
+import { Edit, Trash2, Plus, X } from "lucide-react";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 interface Rota {
   id: number;
@@ -16,8 +16,9 @@ export default function RotasPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  
-  // Form state
+
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+
   const [codigo, setCodigo] = useState("");
   const [nome, setNome] = useState("");
 
@@ -38,7 +39,7 @@ export default function RotasPage() {
 
   async function salvarRota(e: React.FormEvent) {
     e.preventDefault();
-    
+
     const payload = {
       codigo_rota: codigo,
       nome_rota: nome
@@ -50,7 +51,7 @@ export default function RotasPage() {
       } else {
         await api.post("/rotas", payload);
       }
-      
+
       resetForm();
       carregarRotas();
     } catch (error) {
@@ -58,14 +59,15 @@ export default function RotasPage() {
     }
   }
 
-  async function deletarRota(id: number) {
-    if (!confirm("Tem certeza?")) return;
-    
+  async function confirmarDelete() {
+    if (!deleteTarget) return;
     try {
-      await api.delete(`/rotas/${id}`);
+      await api.delete(`/rotas/${deleteTarget}`);
       carregarRotas();
     } catch (error) {
       alert("Erro ao deletar");
+    } finally {
+      setDeleteTarget(null);
     }
   }
 
@@ -86,7 +88,7 @@ export default function RotasPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="w-6 h-6 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin" />
       </div>
     );
   }
@@ -95,66 +97,70 @@ export default function RotasPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Rotas</h1>
-          <p className="text-gray-600">Gerencie as rotas do sistema</p>
+          <h1 className="text-2xl font-semibold text-slate-800">Rotas</h1>
+          <p className="text-sm text-slate-500 mt-1">Gerencie as rotas do sistema</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm rounded-md hover:bg-slate-800 transition-colors"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4" />
           Nova Rota
         </button>
       </div>
 
-      {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">
-              {editingId ? "Editar Rota" : "Nova Rota"}
-            </h2>
-            
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg border border-slate-200 p-6 w-full max-w-md shadow-lg">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-slate-800">
+                {editingId ? "Editar Rota" : "Nova Rota"}
+              </h2>
+              <button onClick={resetForm} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
             <form onSubmit={salvarRota} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">
                   Código da Rota *
                 </label>
                 <input
                   type="text"
                   value={codigo}
                   onChange={(e) => setCodigo(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
                   placeholder="COR001"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">
                   Nome da Rota *
                 </label>
                 <input
                   type="text"
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
                   placeholder="Centro - Tatuapé"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-emerald-600 text-white text-sm rounded-md hover:bg-emerald-700 transition-colors"
                 >
                   {editingId ? "Atualizar" : "Cadastrar"}
                 </button>
@@ -164,44 +170,52 @@ export default function RotasPage() {
         </div>
       )}
 
-      {/* Tabela */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        message="Tem certeza que deseja excluir esta rota?"
+        onConfirm={confirmarDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <table className="min-w-full divide-y divide-slate-100">
+          <thead>
+            <tr className="bg-slate-50/80">
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                 Código
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                 Nome
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                 Ações
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-slate-100">
             {rotas.map((r) => (
-              <tr key={r.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
+                <td className="px-5 py-3.5 text-sm text-slate-700 font-mono">
                   {r.codigo_rota}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-5 py-3.5 text-sm text-slate-700">
                   {r.nome_rota}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <button
-                    onClick={() => editarRota(r)}
-                    className="text-blue-600 hover:text-blue-900 mr-3"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => deletarRota(r.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => editarRota(r)}
+                      className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(r.id)}
+                      className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

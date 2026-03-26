@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { Bus, Edit, Trash2, Plus } from "lucide-react";
+import { Edit, Trash2, Plus, X } from "lucide-react";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 interface Onibus {
   id: number;
@@ -16,8 +17,9 @@ export default function OnibusPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  
-  // Form state
+
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+
   const [placa, setPlaca] = useState("");
   const [acessivel, setAcessivel] = useState(true);
   const [capacidade, setCapacidade] = useState("");
@@ -39,7 +41,7 @@ export default function OnibusPage() {
 
   async function salvarOnibus(e: React.FormEvent) {
     e.preventDefault();
-    
+
     const payload = {
       placa,
       modelo_acessivel: acessivel,
@@ -52,7 +54,7 @@ export default function OnibusPage() {
       } else {
         await api.post("/onibus", payload);
       }
-      
+
       resetForm();
       carregarOnibus();
     } catch (error) {
@@ -60,14 +62,15 @@ export default function OnibusPage() {
     }
   }
 
-  async function deletarOnibus(id: number) {
-    if (!confirm("Tem certeza?")) return;
-    
+  async function confirmarDelete() {
+    if (!deleteTarget) return;
     try {
-      await api.delete(`/onibus/${id}`);
+      await api.delete(`/onibus/${deleteTarget}`);
       carregarOnibus();
     } catch (error) {
       alert("Erro ao deletar");
+    } finally {
+      setDeleteTarget(null);
     }
   }
 
@@ -90,7 +93,7 @@ export default function OnibusPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="w-6 h-6 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin" />
       </div>
     );
   }
@@ -99,80 +102,84 @@ export default function OnibusPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Ônibus</h1>
-          <p className="text-gray-600">Gerencie a frota de ônibus</p>
+          <h1 className="text-2xl font-semibold text-slate-800">Ônibus</h1>
+          <p className="text-sm text-slate-500 mt-1">Gerencie a frota de ônibus</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm rounded-md hover:bg-slate-800 transition-colors"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4" />
           Novo Ônibus
         </button>
       </div>
 
-      {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">
-              {editingId ? "Editar Ônibus" : "Novo Ônibus"}
-            </h2>
-            
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg border border-slate-200 p-6 w-full max-w-md shadow-lg">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-slate-800">
+                {editingId ? "Editar Ônibus" : "Novo Ônibus"}
+              </h2>
+              <button onClick={resetForm} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
             <form onSubmit={salvarOnibus} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">
                   Placa *
                 </label>
                 <input
                   type="text"
                   value={placa}
                   onChange={(e) => setPlaca(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
                   placeholder="ABC1234"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">
                   Modelo Acessível
                 </label>
                 <select
                   value={acessivel ? "true" : "false"}
                   onChange={(e) => setAcessivel(e.target.value === "true")}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 >
-                  <option value="true" className="text-gray-900">Sim</option>
-                  <option value="false" className="text-gray-900">Não</option>
+                  <option value="true">Sim</option>
+                  <option value="false">Não</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">
                   Capacidade Máxima *
                 </label>
                 <input
                   type="number"
                   value={capacidade}
                   onChange={(e) => setCapacidade(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
                   min="1"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-emerald-600 text-white text-sm rounded-md hover:bg-emerald-700 transition-colors"
                 >
                   {editingId ? "Atualizar" : "Cadastrar"}
                 </button>
@@ -182,52 +189,60 @@ export default function OnibusPage() {
         </div>
       )}
 
-      {/* Tabela */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        message="Tem certeza que deseja excluir este ônibus?"
+        onConfirm={confirmarDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <table className="min-w-full divide-y divide-slate-100">
+          <thead>
+            <tr className="bg-slate-50/80">
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                 Placa
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                 Acessível
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                 Capacidade
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                 Ações
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-slate-100">
             {onibus.map((o) => (
-              <tr key={o.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <tr key={o.id} className="hover:bg-slate-50/50 transition-colors">
+                <td className="px-5 py-3.5 text-sm text-slate-700 font-mono">
                   {o.placa}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs rounded-full ${o.modelo_acessivel ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
+                <td className="px-5 py-3.5">
+                  <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded ${o.modelo_acessivel ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
                     {o.modelo_acessivel ? "Sim" : "Não"}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-5 py-3.5 text-sm text-slate-500">
                   {o.capacidade_maxima} lugares
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <button
-                    onClick={() => editarOnibus(o)}
-                    className="text-blue-600 hover:text-blue-900 mr-3"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => deletarOnibus(o.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => editarOnibus(o)}
+                      className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(o.id)}
+                      className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

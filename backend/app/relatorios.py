@@ -7,9 +7,6 @@ from psycopg2.extras import RealDictCursor
 
 logger = logging.getLogger(__name__)
 
-# ==============================
-# CONTEXT MANAGER PARA CONEXÕES (igual ao crud.py)
-# ==============================
 
 @contextmanager
 def get_cursor(commit: bool = False, dict_cursor: bool = True):
