@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { Map, Edit, Trash2, Plus, ArrowUp, ArrowDown } from "lucide-react";
+import { Trash2, Plus, X, ArrowUp } from "lucide-react";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 interface Itinerario {
   id_rota: number;
@@ -35,10 +36,9 @@ export default function ItinerariosPage() {
   const [paradas, setParadas] = useState<Parada[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [rotaSelecionada, setRotaSelecionada] = useState<string>("");
   const [filtroRota, setFiltroRota] = useState<string>("");
-  
-  // Form state
+  const [deleteTarget, setDeleteTarget] = useState<{ rota: number; parada: number } | null>(null);
+
   const [idRota, setIdRota] = useState("");
   const [idParada, setIdParada] = useState("");
   const [ordem, setOrdem] = useState("");
@@ -85,7 +85,7 @@ export default function ItinerariosPage() {
 
   async function salvarItinerario(e: React.FormEvent) {
     e.preventDefault();
-    
+
     const payload = {
       id_rota: parseInt(idRota),
       id_parada: parseInt(idParada),
@@ -103,15 +103,15 @@ export default function ItinerariosPage() {
     }
   }
 
-  async function deletarItinerario(idRota: number, idParada: number) {
-    if (!confirm("Remover esta parada da rota?")) return;
-    
+  async function confirmarDelete() {
+    if (!deleteTarget) return;
     try {
-      await api.delete(`/itinerarios/${idRota}/${idParada}`);
+      await api.delete(`/itinerarios/${deleteTarget.rota}/${deleteTarget.parada}`);
       carregarItinerarios(filtroRota ? parseInt(filtroRota) : undefined);
-      alert("Parada removida com sucesso!");
     } catch (error) {
       alert("Erro ao remover parada");
+    } finally {
+      setDeleteTarget(null);
     }
   }
 
@@ -123,15 +123,19 @@ export default function ItinerariosPage() {
     setShowModal(false);
   }
 
-  function getNomeRota(id: number): string {
-    const rota = rotas.find(r => r.id === id);
-    return rota ? `${rota.codigo_rota} - ${rota.nome_rota}` : `Rota ${id}`;
-  }
+  const getStatusColor = (status?: string) => {
+    switch(status) {
+      case "acessivel": return "bg-emerald-50 text-emerald-700";
+      case "inacessivel": return "bg-red-50 text-red-700";
+      case "manutencao": return "bg-amber-50 text-amber-700";
+      default: return "bg-slate-100 text-slate-500";
+    }
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="w-6 h-6 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin" />
       </div>
     );
   }
@@ -140,57 +144,59 @@ export default function ItinerariosPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Itinerários</h1>
-          <p className="text-gray-600">Gerencie as paradas de cada rota</p>
+          <h1 className="text-2xl font-semibold text-slate-800">Itinerários</h1>
+          <p className="text-sm text-slate-500 mt-1">Gerencie as paradas de cada rota</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm rounded-md hover:bg-slate-800 transition-colors"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4" />
           Adicionar Parada à Rota
         </button>
       </div>
 
-      {/* Filtro por Rota */}
+      {/* Filtro */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-slate-600 mb-1.5">
           Filtrar por Rota
         </label>
         <select
           value={filtroRota}
           onChange={(e) => setFiltroRota(e.target.value)}
-          className="w-full md:w-96 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+          className="w-full md:w-96 px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
         >
-          <option value="" className="text-gray-900">Todas as rotas</option>
+          <option value="">Todas as rotas</option>
           {rotas.map((r) => (
-            <option key={r.id} value={r.id} className="text-gray-900">
+            <option key={r.id} value={r.id}>
               {r.codigo_rota} - {r.nome_rota}
             </option>
           ))}
         </select>
       </div>
 
-      {/* Modal de Novo Itinerário */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">Adicionar Parada à Rota</h2>
-            
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg border border-slate-200 p-6 w-full max-w-md shadow-lg">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-slate-800">Adicionar Parada à Rota</h2>
+              <button onClick={resetForm} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
             <form onSubmit={salvarItinerario} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Rota *
-                </label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Rota *</label>
                 <select
                   value={idRota}
                   onChange={(e) => setIdRota(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
                 >
-                  <option value="" className="text-gray-900">Selecione uma rota</option>
+                  <option value="">Selecione uma rota</option>
                   {rotas.map((r) => (
-                    <option key={r.id} value={r.id} className="text-gray-900">
+                    <option key={r.id} value={r.id}>
                       {r.codigo_rota} - {r.nome_rota}
                     </option>
                   ))}
@@ -198,18 +204,16 @@ export default function ItinerariosPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Parada *
-                </label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Parada *</label>
                 <select
                   value={idParada}
                   onChange={(e) => setIdParada(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
                 >
-                  <option value="" className="text-gray-900">Selecione uma parada</option>
+                  <option value="">Selecione uma parada</option>
                   {paradas.map((p) => (
-                    <option key={p.id} value={p.id} className="text-gray-900">
+                    <option key={p.id} value={p.id}>
                       Parada #{p.id} - {p.status_acessibilidade}
                     </option>
                   ))}
@@ -217,14 +221,12 @@ export default function ItinerariosPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ordem na Rota *
-                </label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Ordem na Rota *</label>
                 <input
                   type="number"
                   value={ordem}
                   onChange={(e) => setOrdem(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
                   min="1"
                   placeholder="1"
@@ -232,29 +234,27 @@ export default function ItinerariosPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tempo Estimado (minutos)
-                </label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Tempo Estimado (minutos)</label>
                 <input
                   type="number"
                   value={tempo}
                   onChange={(e) => setTempo(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   placeholder="Opcional"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-emerald-600 text-white text-sm rounded-md hover:bg-emerald-700 transition-colors"
                 >
                   Adicionar
                 </button>
@@ -264,65 +264,55 @@ export default function ItinerariosPage() {
         </div>
       )}
 
-      {/* Tabela de Itinerários */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        message="Remover esta parada da rota?"
+        onConfirm={confirmarDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rota
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Parada
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ordem
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tempo Estimado
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status Parada
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ações
-                </th>
+          <table className="min-w-full divide-y divide-slate-100">
+            <thead>
+              <tr className="bg-slate-50/80">
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Rota</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Parada</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Ordem</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Tempo Est.</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Status Parada</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Ações</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-100">
               {itinerarios.map((item, index) => (
-                <tr key={`${item.id_rota}-${item.id_parada}`} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <tr key={`${item.id_rota}-${item.id_parada}`} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="px-5 py-3.5 text-sm text-slate-700 font-mono">
                     {item.codigo_rota || item.id_rota}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-5 py-3.5 text-sm text-slate-500">
                     Parada #{item.id_parada}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div className="flex items-center">
+                  <td className="px-5 py-3.5 text-sm text-slate-700">
+                    <div className="flex items-center gap-1">
                       {item.ordem_parada}
                       {index > 0 && itinerarios[index-1]?.id_rota === item.id_rota && (
-                        <ArrowUp className="w-4 h-4 ml-2 text-gray-400" />
+                        <ArrowUp className="w-3.5 h-3.5 text-slate-300" />
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {item.tempo_estimado || "-"}
+                  <td className="px-5 py-3.5 text-sm text-slate-500">
+                    {item.tempo_estimado || "—"}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      item.parada_status === 'acessivel' ? 'bg-green-100 text-green-800' :
-                      item.parada_status === 'inacessivel' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
+                  <td className="px-5 py-3.5">
+                    <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded ${getStatusColor(item.parada_status)}`}>
                       {item.parada_status || "N/A"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <td className="px-5 py-3.5">
                     <button
-                      onClick={() => deletarItinerario(item.id_rota, item.id_parada)}
-                      className="text-red-600 hover:text-red-900"
+                      onClick={() => setDeleteTarget({ rota: item.id_rota, parada: item.id_parada })}
+                      className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -332,9 +322,9 @@ export default function ItinerariosPage() {
             </tbody>
           </table>
         </div>
-        
+
         {itinerarios.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-12 text-sm text-slate-400">
             Nenhum itinerário encontrado
           </div>
         )}

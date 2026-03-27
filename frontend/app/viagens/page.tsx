@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { Calendar, Edit, Trash2, Plus } from "lucide-react";
+import { Edit, Trash2, Plus, X } from "lucide-react";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 interface Viagem {
   id: number;
@@ -40,8 +41,9 @@ export default function ViagensPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  
-  // Form state
+
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+
   const [idRota, setIdRota] = useState("");
   const [idOnibus, setIdOnibus] = useState("");
   const [idMotorista, setIdMotorista] = useState("");
@@ -74,7 +76,7 @@ export default function ViagensPage() {
 
   async function salvarViagem(e: React.FormEvent) {
     e.preventDefault();
-    
+
     const payload = {
       id_rota: parseInt(idRota),
       id_onibus: parseInt(idOnibus),
@@ -89,7 +91,7 @@ export default function ViagensPage() {
       } else {
         await api.post("/viagens", payload);
       }
-      
+
       resetForm();
       carregarDados();
     } catch (error) {
@@ -97,14 +99,15 @@ export default function ViagensPage() {
     }
   }
 
-  async function deletarViagem(id: number) {
-    if (!confirm("Tem certeza?")) return;
-    
+  async function confirmarDelete() {
+    if (!deleteTarget) return;
     try {
-      await api.delete(`/viagens/${id}`);
+      await api.delete(`/viagens/${deleteTarget}`);
       carregarDados();
     } catch (error) {
       alert("Erro ao deletar");
+    } finally {
+      setDeleteTarget(null);
     }
   }
 
@@ -131,7 +134,7 @@ export default function ViagensPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="w-6 h-6 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin" />
       </div>
     );
   }
@@ -140,40 +143,42 @@ export default function ViagensPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Viagens</h1>
-          <p className="text-gray-600">Gerencie as viagens do sistema</p>
+          <h1 className="text-2xl font-semibold text-slate-800">Viagens</h1>
+          <p className="text-sm text-slate-500 mt-1">Gerencie as viagens do sistema</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm rounded-md hover:bg-slate-800 transition-colors"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4" />
           Nova Viagem
         </button>
       </div>
 
-      {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">
-              {editingId ? "Editar Viagem" : "Nova Viagem"}
-            </h2>
-            
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg border border-slate-200 p-6 w-full max-w-md shadow-lg">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-slate-800">
+                {editingId ? "Editar Viagem" : "Nova Viagem"}
+              </h2>
+              <button onClick={resetForm} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
             <form onSubmit={salvarViagem} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Rota *
-                </label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Rota *</label>
                 <select
                   value={idRota}
                   onChange={(e) => setIdRota(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
                 >
-                  <option value="" className="text-gray-900">Selecione uma rota</option>
+                  <option value="">Selecione uma rota</option>
                   {rotas.map((r) => (
-                    <option key={r.id} value={r.id} className="text-gray-900">
+                    <option key={r.id} value={r.id}>
                       {r.codigo_rota} - {r.nome_rota}
                     </option>
                   ))}
@@ -181,80 +186,68 @@ export default function ViagensPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ônibus *
-                </label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Ônibus *</label>
                 <select
                   value={idOnibus}
                   onChange={(e) => setIdOnibus(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
                 >
-                  <option value="" className="text-gray-900">Selecione um ônibus</option>
+                  <option value="">Selecione um ônibus</option>
                   {onibus.map((o) => (
-                    <option key={o.id} value={o.id} className="text-gray-900">
-                      {o.placa}
-                    </option>
+                    <option key={o.id} value={o.id}>{o.placa}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Motorista *
-                </label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Motorista *</label>
                 <select
                   value={idMotorista}
                   onChange={(e) => setIdMotorista(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
                 >
-                  <option value="" className="text-gray-900">Selecione um motorista</option>
+                  <option value="">Selecione um motorista</option>
                   {motoristas.map((m) => (
-                    <option key={m.id} value={m.id} className="text-gray-900">
-                      {m.nome_completo}
-                    </option>
+                    <option key={m.id} value={m.id}>{m.nome_completo}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Horário de Saída *
-                </label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Horário de Saída *</label>
                 <input
                   type="time"
                   value={horario}
                   onChange={(e) => setHorario(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Lotação Atual
-                </label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Lotação Atual</label>
                 <input
                   type="number"
                   value={lotacao}
                   onChange={(e) => setLotacao(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   min="0"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-emerald-600 text-white text-sm rounded-md hover:bg-emerald-700 transition-colors"
                 >
                   {editingId ? "Atualizar" : "Cadastrar"}
                 </button>
@@ -264,66 +257,62 @@ export default function ViagensPage() {
         </div>
       )}
 
-      {/* Tabela */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Rota
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ônibus
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Motorista
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Horário
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Lotação
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ações
-              </th>
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        message="Tem certeza que deseja excluir esta viagem?"
+        onConfirm={confirmarDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <table className="min-w-full divide-y divide-slate-100">
+          <thead>
+            <tr className="bg-slate-50/80">
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Rota</th>
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Ônibus</th>
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Motorista</th>
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Horário</th>
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Lotação</th>
+              <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Ações</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-slate-100">
             {viagens.map((v) => (
-              <tr key={v.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <tr key={v.id} className="hover:bg-slate-50/50 transition-colors">
+                <td className="px-5 py-3.5 text-sm text-slate-700 font-mono">
                   {v.codigo_rota || v.id_rota}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-5 py-3.5 text-sm text-slate-500 font-mono">
                   {v.onibus_placa || v.id_onibus}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-5 py-3.5 text-sm text-slate-700">
                   {v.motorista_nome || v.id_motorista}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-5 py-3.5 text-sm text-slate-500">
                   {v.horario_saida}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    v.lotacao_atual > 50 ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"
+                <td className="px-5 py-3.5">
+                  <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded ${
+                    v.lotacao_atual > 50 ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"
                   }`}>
-                    {v.lotacao_atual} lugares
+                    {v.lotacao_atual} pass.
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <button
-                    onClick={() => editarViagem(v)}
-                    className="text-blue-600 hover:text-blue-900 mr-3"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => deletarViagem(v.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => editarViagem(v)}
+                      className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(v.id)}
+                      className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

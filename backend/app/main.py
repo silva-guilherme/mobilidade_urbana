@@ -19,9 +19,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ==============================
-# MOTORISTAS
-# ==============================
 
 @app.post("/motoristas", response_model=MotoristaResponse)
 def criar_motorista_api(motorista: schemas.MotoristaCreate):
@@ -80,9 +77,6 @@ def deletar_motorista_api(motorista_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Erro ao deletar motorista")
 
-# ==============================
-# TELEFONES MOTORISTA
-# ==============================
 
 @app.post("/motoristas/{motorista_id}/telefones", response_model=TelefoneMotoristaResponse)
 def criar_telefone_motorista_api(motorista_id: int, telefone: schemas.TelefoneMotoristaCreate):
@@ -114,9 +108,6 @@ def deletar_telefone_motorista_api(motorista_id: int, numero: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Erro ao deletar telefone")
 
-# ==============================
-# PASSAGEIROS
-# ==============================
 
 @app.post("/passageiros", response_model=PassageiroResponse)
 def criar_passageiro_api(passageiro: schemas.PassageiroCreate):
@@ -171,9 +162,7 @@ def deletar_passageiro_api(passageiro_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Erro ao deletar passageiro")
 
-# ==============================
-# EMAILS PASSAGEIRO
-# ==============================
+
 
 @app.post("/passageiros/{passageiro_id}/emails", response_model=EmailPassageiroResponse)
 def criar_email_passageiro_api(passageiro_id: int, email: schemas.EmailPassageiroCreate):
@@ -205,9 +194,7 @@ def deletar_email_passageiro_api(passageiro_id: int, email: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Erro ao deletar email")
 
-# ==============================
-# ÔNIBUS
-# ==============================
+
 
 @app.post("/onibus", response_model=OnibusResponse)
 def criar_onibus_api(onibus: schemas.OnibusCreate):
@@ -265,9 +252,6 @@ def deletar_onibus_api(onibus_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Erro ao deletar ônibus")
 
-# ==============================
-# ROTAS
-# ==============================
 
 @app.post("/rotas", response_model=RotaResponse)
 def criar_rota_api(rota: schemas.RotaCreate):

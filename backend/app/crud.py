@@ -6,19 +6,17 @@ import logging
 from psycopg2.extras import RealDictCursor
 from psycopg2 import sql
 
-# Configuração de logging
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ==============================
-# CONTEXT MANAGER PARA CONEXÕES
-# ==============================
+
 
 @contextmanager
 def get_cursor(commit: bool = False, dict_cursor: bool = True):
-    """
-    Context manager para gerenciar conexões com o banco de dados
-    """
+    
+    #Context manager para gerenciar conexões com o banco de dados
+    
     conn = None
     cursor = None
     try:
@@ -39,9 +37,9 @@ def get_cursor(commit: bool = False, dict_cursor: bool = True):
         if conn:
             conn.close()
 
-# ==============================
+
 # UTILITÁRIOS
-# ==============================
+
 
 def fetch_one_or_none(cursor):
     """Retorna um registro ou None"""
@@ -56,14 +54,12 @@ def row_to_dict(columns, row):
     """Converte uma linha em dicionário"""
     return dict(zip(columns, row)) if row else None
 
-# ==============================
-# PASSAGEIRO
-# ==============================
+
 
 def criar_passageiro(passageiro: schemas.PassageiroCreate) -> Optional[Dict]:
-    """
-    Cria um novo passageiro com validação de unicidade de email
-    """
+    
+    #Cria um novo passageiro com validação de unicidade de email
+    
     with get_cursor(commit=True) as cursor:
         # Verifica se já existe passageiro com mesmo email (se fornecido)
         if hasattr(passageiro, 'emails') and passageiro.emails:
@@ -102,7 +98,7 @@ def criar_passageiro(passageiro: schemas.PassageiroCreate) -> Optional[Dict]:
                 if email_inserido:
                     emails_retorno.append(email_inserido['email'])
         
-        # 🔥 IMPORTANTE: Adiciona emails ao retorno
+        #Adiciona emails ao retorno
         if novo_passageiro:
             novo_passageiro['emails'] = emails_retorno
         
@@ -177,9 +173,9 @@ def listar_passageiros(
         return passageiros
 
 def obter_passageiro(passageiro_id: int, include_emails: bool = True) -> Optional[Dict]:
-    """
-    Obtém um passageiro por ID com seus emails
-    """
+    
+    #Obtém um passageiro por ID com seus emails
+    
     with get_cursor() as cursor:
         query = """
             SELECT 
@@ -205,9 +201,9 @@ def obter_passageiro(passageiro_id: int, include_emails: bool = True) -> Optiona
         return passageiro
 
 def atualizar_passageiro(passageiro_id: int, dados: schemas.PassageiroCreate) -> Optional[Dict]:
-    """
-    Atualiza um passageiro existente (sem alterar emails)
-    """
+    
+    #Atualiza um passageiro existente (sem alterar emails)
+    
     with get_cursor(commit=True) as cursor:
         # Verifica se passageiro existe
         cursor.execute("SELECT id FROM passageiros WHERE id = %s", (passageiro_id,))
@@ -231,7 +227,7 @@ def atualizar_passageiro(passageiro_id: int, dados: schemas.PassageiroCreate) ->
         
         passageiro_atualizado = fetch_one_or_none(cursor)
         
-        # 🔥 Busca emails atuais do passageiro
+        # Busca emails atuais do passageiro
         if passageiro_atualizado:
             cursor.execute("""
                 SELECT email FROM emails_passageiro
@@ -258,7 +254,7 @@ def deletar_passageiro(passageiro_id: int) -> Optional[Dict]:
         if not passageiro:
             return None
         
-        # Deleta emails (ON DELETE CASCADE deve cuidar disso se configurado)
+        # Deleta emails 
         cursor.execute("DELETE FROM emails_passageiro WHERE id_passageiro = %s", (passageiro_id,))
         
         # Deleta feedbacks relacionados
@@ -273,9 +269,7 @@ def deletar_passageiro(passageiro_id: int) -> Optional[Dict]:
         logger.info(f"Passageiro deletado: ID {passageiro_id}")
         return passageiro
 
-# ==============================
-# EMAIL PASSAGEIRO
-# ==============================
+
 
 def criar_email_passageiro(email: schemas.EmailPassageiroCreate) -> Optional[Dict]:
     """
@@ -305,9 +299,9 @@ def criar_email_passageiro(email: schemas.EmailPassageiroCreate) -> Optional[Dic
         return novo_email
 
 def listar_emails_passageiro(passageiro_id: int) -> List[Dict]:
-    """
-    Lista todos os emails de um passageiro
-    """
+    
+   # Lista todos os emails de um passageiro
+    
     with get_cursor() as cursor:
         cursor.execute("""
             SELECT id_passageiro, email, 
@@ -338,9 +332,9 @@ def deletar_email_passageiro(passageiro_id: int, email: str) -> Optional[Dict]:
         
         return email_deletado
 
-# ==============================
+
 # MOTORISTA
-# ==============================
+
 
 def criar_motorista(motorista: schemas.MotoristaCreate) -> Optional[Dict]:
     """
@@ -381,7 +375,7 @@ def criar_motorista(motorista: schemas.MotoristaCreate) -> Optional[Dict]:
                 if tel:
                     telefones_retorno.append(tel)
         
-        # 🔥 IMPORTANTE: Adiciona telefones ao retorno
+        #Adiciona telefones ao retorno
         if novo_motorista:
             novo_motorista['telefones'] = telefones_retorno
         
@@ -457,9 +451,9 @@ def listar_motoristas(
         return motoristas
 
 def obter_motorista(motorista_id: int, include_telefones: bool = True) -> Optional[Dict]:
-    """
-    Obtém um motorista por ID
-    """
+
+    #Obtém um motorista por ID
+ 
     with get_cursor() as cursor:
         query = """
             SELECT 
@@ -486,9 +480,9 @@ def obter_motorista(motorista_id: int, include_telefones: bool = True) -> Option
         return motorista
 
 def atualizar_motorista(motorista_id: int, dados: schemas.MotoristaCreate) -> Optional[Dict]:
-    """
-    Atualiza um motorista existente E seus telefones
-    """
+  
+    #Atualiza um motorista existente E seus telefones
+    
     with get_cursor(commit=True) as cursor:
         # Verifica se motorista existe
         cursor.execute("SELECT id FROM motoristas WHERE id = %s", (motorista_id,))
@@ -522,7 +516,7 @@ def atualizar_motorista(motorista_id: int, dados: schemas.MotoristaCreate) -> Op
         
         motorista_atualizado = fetch_one_or_none(cursor)
         
-        # 🔥 NOVO: Gerencia telefones (remove antigos e insere novos)
+        #Gerencia telefones (remove antigos e insere novos)
         if hasattr(dados, 'telefones') and dados.telefones is not None:
             # Remove telefones antigos
             cursor.execute("DELETE FROM telefones_motorista WHERE id_motorista = %s", (motorista_id,))
@@ -553,9 +547,9 @@ def atualizar_motorista(motorista_id: int, dados: schemas.MotoristaCreate) -> Op
         return motorista_atualizado
 
 def deletar_motorista(motorista_id: int) -> Optional[Dict]:
-    """
-    Deleta um motorista e dados relacionados
-    """
+    
+    #Deleta um motorista e dados relacionados
+    
     with get_cursor(commit=True) as cursor:
         # Busca dados antes de deletar
         cursor.execute("SELECT id, nome_completo FROM motoristas WHERE id = %s", (motorista_id,))
@@ -579,14 +573,13 @@ def deletar_motorista(motorista_id: int) -> Optional[Dict]:
         logger.info(f"Motorista deletado: ID {motorista_id}")
         return motorista
 
-# ==============================
-# TELEFONE MOTORISTA
-# ==============================
+
+
 
 def criar_telefone_motorista(telefone: schemas.TelefoneMotoristaCreate) -> Optional[Dict]:
-    """
-    Adiciona um telefone a um motorista
-    """
+    
+    #Adiciona um telefone a um motorista
+    
     with get_cursor(commit=True) as cursor:
         # Verifica se motorista existe
         cursor.execute("SELECT id FROM motoristas WHERE id = %s", (telefone.id_motorista,))
@@ -615,9 +608,9 @@ def listar_motoristas(
     search: Optional[str] = None,
     include_telefones: bool = True
 ) -> List[Dict]:
-    """
-    Lista motoristas com filtros opcionais
-    """
+   
+    #Lista motoristas com filtros opcionais
+    
     with get_cursor() as cursor:
         # Query base
         base_query = """
@@ -667,7 +660,7 @@ def listar_motoristas(
                     telefones_por_motorista[mid] = []
                 telefones_por_motorista[mid].append({
                     'numero': tel['numero'],
-                    'tipo': tel['tipo']  # ← SÓ numero e tipo, SEM id_motorista
+                    'tipo': tel['tipo']  #  SÓ numero e tipo, SEM id_motorista
                 })
             
             # Adiciona telefones aos motoristas
@@ -677,9 +670,9 @@ def listar_motoristas(
         return motoristas
 
 def deletar_telefone_motorista(motorista_id: int, numero: str) -> Optional[Dict]:
-    """
-    Remove um telefone de um motorista
-    """
+    
+    #Remove um telefone de um motorista
+    
     with get_cursor(commit=True) as cursor:
         query = """
             DELETE FROM telefones_motorista
@@ -695,14 +688,12 @@ def deletar_telefone_motorista(motorista_id: int, numero: str) -> Optional[Dict]
         
         return telefone
 
-# ==============================
-# ÔNIBUS
-# ==============================
+
 
 def criar_onibus(onibus: schemas.OnibusCreate) -> Optional[Dict]:
-    """
-    Cria um novo ônibus
-    """
+   
+    #Cria um novo ônibus
+    
     with get_cursor(commit=True) as cursor:
         # Verifica se placa já existe
         cursor.execute("SELECT id FROM onibus WHERE placa = %s", (onibus.placa,))
@@ -731,9 +722,9 @@ def listar_onibus(
     acessivel: Optional[bool] = None,
     capacidade_min: Optional[int] = None
 ) -> List[Dict]:
-    """
-    Lista ônibus com filtros opcionais
-    """
+
+    #Lista ônibus com filtros opcionais
+
     with get_cursor() as cursor:
         query = """
             SELECT 

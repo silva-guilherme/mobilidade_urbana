@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { MessageSquare, Edit, Trash2, Plus, Eye } from "lucide-react";
+import { Edit, Trash2, Plus, Eye, X } from "lucide-react";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 interface Feedback {
   id: number;
@@ -34,8 +35,9 @@ export default function FeedbacksPage() {
   const [showDetails, setShowDetails] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
-  
-  // Form state
+
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+
   const [idPassageiro, setIdPassageiro] = useState("");
   const [idViagem, setIdViagem] = useState("");
   const [tipoOcorrencia, setTipoOcorrencia] = useState("lotacao");
@@ -66,7 +68,7 @@ export default function FeedbacksPage() {
 
   async function salvarFeedback(e: React.FormEvent) {
     e.preventDefault();
-    
+
     const payload = {
       id_passageiro: parseInt(idPassageiro),
       id_viagem: parseInt(idViagem),
@@ -83,7 +85,7 @@ export default function FeedbacksPage() {
         await api.post("/feedbacks", payload);
         alert("Feedback registrado com sucesso!");
       }
-      
+
       resetForm();
       carregarDados();
     } catch (error) {
@@ -91,15 +93,15 @@ export default function FeedbacksPage() {
     }
   }
 
-  async function deletarFeedback(id: number) {
-    if (!confirm("Tem certeza que deseja deletar este feedback?")) return;
-    
+  async function confirmarDelete() {
+    if (!deleteTarget) return;
     try {
-      await api.delete(`/feedbacks/${id}`);
+      await api.delete(`/feedbacks/${deleteTarget}`);
       carregarDados();
-      alert("Feedback deletado com sucesso!");
     } catch (error) {
       alert("Erro ao deletar feedback");
+    } finally {
+      setDeleteTarget(null);
     }
   }
 
@@ -130,11 +132,11 @@ export default function FeedbacksPage() {
 
   const getOcorrenciaColor = (tipo: string) => {
     switch(tipo) {
-      case "lotacao": return "bg-yellow-100 text-yellow-800";
-      case "mecanica": return "bg-red-100 text-red-800";
-      case "conduta": return "bg-green-100 text-green-800";
-      case "acessibilidade": return "bg-blue-100 text-blue-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "lotacao": return "bg-amber-50 text-amber-700";
+      case "mecanica": return "bg-red-50 text-red-700";
+      case "conduta": return "bg-emerald-50 text-emerald-700";
+      case "acessibilidade": return "bg-sky-50 text-sky-700";
+      default: return "bg-slate-100 text-slate-500";
     }
   };
 
@@ -146,7 +148,7 @@ export default function FeedbacksPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="w-6 h-6 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin" />
       </div>
     );
   }
@@ -155,123 +157,113 @@ export default function FeedbacksPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Feedbacks</h1>
-          <p className="text-gray-600">Avaliações dos passageiros sobre as viagens</p>
+          <h1 className="text-2xl font-semibold text-slate-800">Feedbacks</h1>
+          <p className="text-sm text-slate-500 mt-1">Avaliações dos passageiros sobre as viagens</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm rounded-md hover:bg-slate-800 transition-colors"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4" />
           Novo Feedback
         </button>
       </div>
 
-      {/* Modal de Cadastro/Edição */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">
-              {editingId ? "Editar Feedback" : "Novo Feedback"}
-            </h2>
-            
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg border border-slate-200 p-6 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-lg">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-slate-800">
+                {editingId ? "Editar Feedback" : "Novo Feedback"}
+              </h2>
+              <button onClick={resetForm} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
             <form onSubmit={salvarFeedback} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Passageiro *
-                </label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Passageiro *</label>
                 <select
                   value={idPassageiro}
                   onChange={(e) => setIdPassageiro(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
                 >
-                  <option value="" className="text-gray-900">Selecione um passageiro</option>
+                  <option value="">Selecione um passageiro</option>
                   {passageiros.map((p) => (
-                    <option key={p.id} value={p.id} className="text-gray-900">
-                      {p.nome_completo}
-                    </option>
+                    <option key={p.id} value={p.id}>{p.nome_completo}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Viagem *
-                </label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Viagem *</label>
                 <select
                   value={idViagem}
                   onChange={(e) => setIdViagem(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
                 >
-                  <option value="" className="text-gray-900">Selecione uma viagem</option>
+                  <option value="">Selecione uma viagem</option>
                   {viagens.map((v) => (
-                    <option key={v.id} value={v.id} className="text-gray-900">
-                      Viagem {v.id} - {v.horario_saida}
-                    </option>
+                    <option key={v.id} value={v.id}>Viagem {v.id} - {v.horario_saida}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tipo de Ocorrência *
-                </label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Tipo de Ocorrência *</label>
                 <select
                   value={tipoOcorrencia}
                   onChange={(e) => setTipoOcorrencia(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
                 >
-                  <option value="lotacao" className="text-gray-900">Lotação</option>
-                  <option value="mecanica" className="text-gray-900">Mecânica</option>
-                  <option value="conduta" className="text-gray-900">Conduta</option>
-                  <option value="acessibilidade" className="text-gray-900">Acessibilidade</option>
+                  <option value="lotacao">Lotação</option>
+                  <option value="mecanica">Mecânica</option>
+                  <option value="conduta">Conduta</option>
+                  <option value="acessibilidade">Acessibilidade</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nível de Lotação (1-5)
-                </label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Nível de Lotação (1-5)</label>
                 <input
                   type="number"
                   min="1"
                   max="5"
                   value={nivelLotacao}
                   onChange={(e) => setNivelLotacao(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   placeholder="Opcional"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data e Hora
-                </label>
+                <label className="block text-sm font-medium text-slate-600 mb-1.5">Data e Hora</label>
                 <input
                   type="datetime-local"
                   value={dataHora}
                   onChange={(e) => setDataHora(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-slate-400 mt-1">
                   Deixe em branco para usar a data/hora atual
                 </p>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-emerald-600 text-white text-sm rounded-md hover:bg-emerald-700 transition-colors"
                 >
                   {editingId ? "Atualizar" : "Registrar"}
                 </button>
@@ -283,43 +275,48 @@ export default function FeedbacksPage() {
 
       {/* Modal de Detalhes */}
       {showDetails && selectedFeedback && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">Detalhes do Feedback</h2>
-            
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg border border-slate-200 p-6 w-full max-w-md shadow-lg">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-slate-800">Detalhes do Feedback</h2>
+              <button onClick={() => setShowDetails(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
             <div className="space-y-3">
               <div>
-                <p className="text-sm text-gray-500">ID</p>
-                <p className="font-medium text-gray-900">{selectedFeedback.id}</p>
+                <p className="text-xs text-slate-400 uppercase tracking-wide">ID</p>
+                <p className="text-sm font-medium text-slate-700 mt-0.5">{selectedFeedback.id}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Passageiro</p>
-                <p className="font-medium text-gray-900">{selectedFeedback.passageiro_nome || selectedFeedback.id_passageiro}</p>
+                <p className="text-xs text-slate-400 uppercase tracking-wide">Passageiro</p>
+                <p className="text-sm font-medium text-slate-700 mt-0.5">{selectedFeedback.passageiro_nome || selectedFeedback.id_passageiro}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Viagem</p>
-                <p className="font-medium text-gray-900">{selectedFeedback.id_viagem}</p>
+                <p className="text-xs text-slate-400 uppercase tracking-wide">Viagem</p>
+                <p className="text-sm font-medium text-slate-700 mt-0.5">{selectedFeedback.id_viagem}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Tipo de Ocorrência</p>
-                <span className={`px-2 py-1 text-xs rounded-full inline-block ${getOcorrenciaColor(selectedFeedback.tipo_ocorrencia)}`}>
+                <p className="text-xs text-slate-400 uppercase tracking-wide">Tipo de Ocorrência</p>
+                <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded mt-1 ${getOcorrenciaColor(selectedFeedback.tipo_ocorrencia)}`}>
                   {selectedFeedback.tipo_ocorrencia}
                 </span>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Nível de Lotação</p>
-                <p className="font-medium text-gray-900">{selectedFeedback.nivel_lotacao || "Não informado"}</p>
+                <p className="text-xs text-slate-400 uppercase tracking-wide">Nível de Lotação</p>
+                <p className="text-sm font-medium text-slate-700 mt-0.5">{selectedFeedback.nivel_lotacao || "Não informado"}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Data e Hora</p>
-                <p className="font-medium text-gray-900">{formatarData(selectedFeedback.data_hora)}</p>
+                <p className="text-xs text-slate-400 uppercase tracking-wide">Data e Hora</p>
+                <p className="text-sm font-medium text-slate-700 mt-0.5">{formatarData(selectedFeedback.data_hora)}</p>
               </div>
             </div>
 
             <div className="flex justify-end mt-6">
               <button
                 onClick={() => setShowDetails(false)}
-                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 transition-colors"
               >
                 Fechar
               </button>
@@ -328,80 +325,76 @@ export default function FeedbacksPage() {
         </div>
       )}
 
-      {/* Tabela de Feedbacks */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        message="Tem certeza que deseja excluir este feedback?"
+        onConfirm={confirmarDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Passageiro
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Viagem
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tipo
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Data/Hora
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ações
-                </th>
+          <table className="min-w-full divide-y divide-slate-100">
+            <thead>
+              <tr className="bg-slate-50/80">
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">ID</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Passageiro</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Viagem</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Tipo</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Data/Hora</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">Ações</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-100">
               {feedbacks.map((f) => (
-                <tr key={f.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <tr key={f.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="px-5 py-3.5 text-sm text-slate-500 font-mono">
                     {f.id}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-5 py-3.5 text-sm text-slate-700">
                     {f.passageiro_nome || f.id_passageiro}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-5 py-3.5 text-sm text-slate-500">
                     {f.id_viagem}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${getOcorrenciaColor(f.tipo_ocorrencia)}`}>
+                  <td className="px-5 py-3.5">
+                    <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded ${getOcorrenciaColor(f.tipo_ocorrencia)}`}>
                       {f.tipo_ocorrencia}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-5 py-3.5 text-sm text-slate-500">
                     {formatarData(f.data_hora)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <button
-                      onClick={() => verDetalhes(f)}
-                      className="text-green-600 hover:text-green-900 mr-3"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => editarFeedback(f)}
-                      className="text-blue-600 hover:text-blue-900 mr-3"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => deletarFeedback(f.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => verDetalhes(f)}
+                        className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => editarFeedback(f)}
+                        className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteTarget(f.id)}
+                        className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        
+
         {feedbacks.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-12 text-sm text-slate-400">
             Nenhum feedback registrado
           </div>
         )}

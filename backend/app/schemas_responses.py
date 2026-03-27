@@ -3,15 +3,10 @@ from typing import Optional, List
 from datetime import datetime, time
 from . import schemas
 
-# ==============================
-# CLASSES DE RESPOSTA (com ID e dados completos)
-# ==============================
 
-class TelefoneMotoristaResponse(BaseModel):  # ← NÃO estender de TelefoneMotoristaBase
+class TelefoneMotoristaResponse(BaseModel):  
     numero: str
     tipo: str
-    # id_motorista: int  # ← REMOVA esta linha! O telefone não precisa do ID do motorista no retorno
-
     class Config:
         from_attributes = True
 
@@ -19,15 +14,14 @@ class TelefoneMotoristaResponse(BaseModel):  # ← NÃO estender de TelefoneMoto
 class MotoristaResponse(schemas.MotoristaBase):
     id: int
     data_criacao: Optional[datetime] = None
-    telefones: List[TelefoneMotoristaResponse] = []  # ← Agora espera só numero e tipo
+    telefones: List[TelefoneMotoristaResponse] = []  
 
     class Config:
         from_attributes = True
 
 
-class EmailPassageiroResponse(BaseModel):  # ← NÃO estender de EmailPassageiroBase
+class EmailPassageiroResponse(BaseModel): 
     email: str
-    # id_passageiro: int  # ← REMOVA esta linha!
 
     class Config:
         from_attributes = True
@@ -36,7 +30,7 @@ class EmailPassageiroResponse(BaseModel):  # ← NÃO estender de EmailPassageir
 class PassageiroResponse(schemas.PassageiroBase):
     id: int
     data_criacao: Optional[datetime] = None
-    emails: List[str] = []  # ← Lista de strings, não de objetos
+    emails: List[str] = []  
 
     class Config:
         from_attributes = True
