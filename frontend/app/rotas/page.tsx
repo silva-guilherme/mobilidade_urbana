@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { Map, Edit, Trash2, Plus} from "lucide-react";
+import { Map, Edit, Trash2, Plus } from "lucide-react";
 import Link from "next/link";
 
 interface Rota {
@@ -16,7 +16,7 @@ export default function RotasPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  
+
   // Form state
   const [codigo, setCodigo] = useState("");
   const [nome, setNome] = useState("");
@@ -38,10 +38,10 @@ export default function RotasPage() {
 
   async function salvarRota(e: React.FormEvent) {
     e.preventDefault();
-    
+
     const payload = {
       codigo_rota: codigo,
-      nome_rota: nome
+      nome_rota: nome,
     };
 
     try {
@@ -50,7 +50,7 @@ export default function RotasPage() {
       } else {
         await api.post("/rotas", payload);
       }
-      
+
       resetForm();
       carregarRotas();
     } catch (error) {
@@ -60,7 +60,7 @@ export default function RotasPage() {
 
   async function deletarRota(id: number) {
     if (!confirm("Tem certeza?")) return;
-    
+
     try {
       await api.delete(`/rotas/${id}`);
       carregarRotas();
@@ -114,7 +114,7 @@ export default function RotasPage() {
             <h2 className="text-xl font-bold mb-4 text-gray-900">
               {editingId ? "Editar Rota" : "Nova Rota"}
             </h2>
-            
+
             <form onSubmit={salvarRota} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -190,12 +190,20 @@ export default function RotasPage() {
                   {r.nome_rota}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  {/* BOTÃO DO MAPA  */}
+                  <Link href={`/rotas/${r.id}/mapa`}>
+                    <button className="text-green-600 hover:text-green-900 mr-3">
+                      <Map className="w-4 h-4" />
+                    </button>
+                  </Link>
+
                   <button
                     onClick={() => editarRota(r)}
                     className="text-blue-600 hover:text-blue-900 mr-3"
                   >
                     <Edit className="w-4 h-4" />
                   </button>
+
                   <button
                     onClick={() => deletarRota(r.id)}
                     className="text-red-600 hover:text-red-900"
