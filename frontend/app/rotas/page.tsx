@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { Edit, Trash2, Plus, X } from "lucide-react";
+import { Edit, Trash2, Plus, X, Map } from "lucide-react";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
+import { useRouter } from "next/navigation";
 
 interface Rota {
   id: number;
@@ -21,6 +22,8 @@ export default function RotasPage() {
 
   const [codigo, setCodigo] = useState("");
   const [nome, setNome] = useState("");
+
+  const router = useRouter();
 
   useEffect(() => {
     carregarRotas();
@@ -83,6 +86,10 @@ export default function RotasPage() {
     setNome("");
     setEditingId(null);
     setShowModal(false);
+  }
+
+  function irParaMapa(id: number) {
+    router.push(`/rotas/${id}/mapa`);
   }
 
   if (loading) {
@@ -203,18 +210,29 @@ export default function RotasPage() {
                 </td>
                 <td className="px-5 py-3.5">
                   <div className="flex items-center gap-1">
+                    
+                    {/* BOTÃO MAPA */}
+                    <button
+                      onClick={() => irParaMapa(r.id)}
+                      className="p-1.5 rounded hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors"
+                    >
+                      <Map className="w-4 h-4" />
+                    </button>
+
                     <button
                       onClick={() => editarRota(r)}
                       className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
                     >
                       <Edit className="w-4 h-4" />
                     </button>
+
                     <button
                       onClick={() => setDeleteTarget(r.id)}
                       className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
+
                   </div>
                 </td>
               </tr>

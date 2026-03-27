@@ -13,7 +13,7 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// 🔥 Corrige Leaflet no Next
+
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
 
@@ -22,20 +22,20 @@ const busIcon = new L.Icon({
   iconSize: [35, 35],
 });
 
-// 🔴 Ícone fim
+
 const fimIcon = new L.Icon({
   iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
   iconSize: [32, 32],
 });
 
-// 🎯 Função cor da lotação
+
 function getCorLotacao(lotacao: string) {
   if (lotacao === "alta") return "red";
   if (lotacao === "media") return "orange";
   return "green";
 }
 
-// 🔢 Ícone com número + cor
+
 function criarIcone(numero: number, cor: string) {
   return L.divIcon({
     html: `
@@ -58,7 +58,7 @@ function criarIcone(numero: number, cor: string) {
   });
 }
 
-// 🔵 Ajusta zoom
+
 function AjustarMapa({ coords }: any) {
   const map = useMap();
 
@@ -112,20 +112,20 @@ export default function MapaRota() {
 
         <AjustarMapa coords={coords} />
 
-        {/* 🔵 Linha da rota */}
+        {/*  Linha da rota */}
         <Polyline positions={coords} color="blue" weight={5} />
 
-        {/* 🚌 Início */}
+        {/*  Início */}
         <Marker position={coords[0]} icon={busIcon}>
           <Popup>🚌 Início da rota</Popup>
         </Marker>
 
-        {/* 🔴 Fim */}
+        {/*  Fim */}
         <Marker position={coords[coords.length - 1]} icon={fimIcon}>
           <Popup>Fim da rota</Popup>
         </Marker>
 
-        {/* 📍 Paradas com lotação */}
+        {/* Paradas com lotação */}
         {paradas.map((p: any, index: number) => {
           const cor = getCorLotacao(p.lotacao || "baixa");
 

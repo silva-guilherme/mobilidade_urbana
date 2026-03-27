@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold text-center mb-8 text-blue-600">Sistema de Mobilidade Urbana</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Card Motoristas -->
+        <a href="/motoristas" class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 text-center">
+            <div class="text-4xl mb-4">👨‍💼</div>
+            <h2 class="text-xl font-semibold mb-2">Motoristas</h2>
+            <p class="text-gray-600">Gerenciar motoristas</p>
+        </a>
+
+        <!-- Card Passageiros -->
+        <a href="/passageiros" class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 text-center">
+            <div class="text-4xl mb-4">👥</div>
+            <h2 class="text-xl font-semibold mb-2">Passageiros</h2>
+            <p class="text-gray-600">Gerenciar passageiros</p>
+        </a>
+
+        <!-- Card Ônibus -->
+        <a href="/onibus" class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 text-center">
+            <div class="text-4xl mb-4">🚌</div>
+            <h2 class="text-xl font-semibold mb-2">Ônibus</h2>
+            <p class="text-gray-600">Gerenciar ônibus</p>
+        </a>
+
+        <!-- Card Rotas -->
+        <a href="/rotas" class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 text-center">
+            <div class="text-4xl mb-4">🗺️</div>
+            <h2 class="text-xl font-semibold mb-2">Rotas</h2>
+            <p class="text-gray-600">Gerenciar rotas</p>
+        </a>
+    </div>
+</div>
+{% endblock %}
